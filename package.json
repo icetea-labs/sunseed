@@ -15,5 +15,12 @@
   "bugs": {
     "url": "https://github.com/TradaTech/sunseed/issues"
   },
-  "homepage": "https://github.com/TradaTech/sunseed#readme"
+  "homepage": "https://github.com/TradaTech/sunseed#readme",
+  "dependencies": {
+    "@babel/core": "^7.4.0",
+    "@babel/plugin-transform-flow-strip-types": "^7.4.0",
+    "node-fetch": "^2.3.0",
+    "prettier": "^1.16.4",
+    "uglify-js": "^3.5.2"
+  }
 }

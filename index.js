@@ -3,28 +3,38 @@ const plugin = require('./babel')
 const { resolveExternal } = require('./preprocess')
 const makeWrapper = require('./wrapper')
 
-exports.transpile = (src, opts) => {
+const prettier = require("prettier")
+const UglifyJS = require("uglify-js")
+
+exports.transpile = async (src, { 
+  uglify = true,
+  uglifyOpts = {},
+  prettier = false,
+  prettierOpts = {} }) => {
   // first, preprocess
-  src = resolveExternal(src)
+  src = await resolveExternal(src)
 
   // then, babel it
-  const result = babelIt(src, [plugin])
-  src = babel.transformFromAstSync(result.ast, result.code, {
-    retainLines: false,
-    minified: false,
-    sourceMaps: false,
-    ['@babel/plugin-transform-flow-strip-types']
-  })
+  src = babelIt(src, [plugin])
+
+  // remove flow types
+  src = babelIt(src,['@babel/plugin-transform-flow-strip-types'])
 
   // finally, wrap it
-  src = makeWrapper(src)
+  src = makeWrapper(src).trim()
+
+  if (prettier) {
+    src = prettify(src, prettierOpts)
+  } else if (uglify) {
+    src = minify(src, uglifyOpts)
+  }
 
   console.log(src)
 
   return src
 }
 
-babelIt (src, plugins, sourceFilename = 'Contract source') {
+function babelIt (src, plugins, sourceFilename = 'Contract source') {
   return babel.transformSync(src, {
     parserOpts: {
       sourceType: 'script',
@@ -63,5 +73,18 @@ babelIt (src, plugins, sourceFilename = 'Contract source') {
     minified: false,
     sourceMaps: false,
     plugins
+  }).code
+}
+
+function prettify(src, opts = {}) {
+  return prettier.format(src, { semi: false, parser: "babel", ...opts })
+}
+
+function minify(src, opts = {}) {
+  return UglifyJS.minify(src, { 
+    parse: {
+      bare_returns: true
+    },
+    ...opts
   })
 }

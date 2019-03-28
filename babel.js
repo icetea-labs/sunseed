@@ -33,7 +33,7 @@ function isMethod (node) {
   }
   
   const SUPPORTED_TYPES = ['number', 'string', 'boolean', 'bigint', 'null', 'undefined',
-    'function', 'array', 'map', 'set', 'date', 'regexp']
+    'function', 'array', 'map', 'set', 'date', 'regexp', 'promise']
   
   function concatUnique (a, b) {
     if (!Array.isArray(a)) {
