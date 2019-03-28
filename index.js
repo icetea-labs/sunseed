@@ -14,11 +14,13 @@ exports.transpile = async (src, {
   // first, preprocess
   src = await resolveExternal(src)
 
-  // then, babel it
-  src = babelIt(src, [plugin])
+  // The decorated plugins should append this, but for now we add here to simplify
+  src += ';const __contract = new __contract_name();const __metadata = {}'
+  // then, babelify it
+  src = babelify(src, [plugin])
 
   // remove flow types
-  src = babelIt(src,['@babel/plugin-transform-flow-strip-types'])
+  src = babelify(src,['@babel/plugin-transform-flow-strip-types'])
 
   // finally, wrap it
   src = makeWrapper(src).trim()
@@ -34,7 +36,7 @@ exports.transpile = async (src, {
   return src
 }
 
-function babelIt (src, plugins, sourceFilename = 'Contract source') {
+function babelify (src, plugins, sourceFilename = 'Contract source') {
   return babel.transformSync(src, {
     parserOpts: {
       sourceType: 'script',
