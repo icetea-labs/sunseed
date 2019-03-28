@@ -7,10 +7,11 @@ const prettier = require("prettier")
 const UglifyJS = require("uglify-js")
 
 exports.transpile = async (src, { 
-  uglify = true,
+  uglify = false,
   uglifyOpts = {},
   prettier = false,
   prettierOpts = {} }) => {
+
   // first, preprocess
   src = await resolveExternal(src)
 
