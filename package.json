@@ -1,0 +1,19 @@
+{
+  "name": "sunseed",
+  "version": "1.0.0",
+  "description": "Compile djs to raw js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/TradaTech/sunseed.git"
+  },
+  "author": "Trada Tech",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TradaTech/sunseed/issues"
+  },
+  "homepage": "https://github.com/TradaTech/sunseed#readme"
+}
