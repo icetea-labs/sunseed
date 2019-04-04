@@ -12,9 +12,10 @@ exports.transpile = async (src, {
   minifyOpts = {},
   prettier = false,
   prettierOpts = {},
-  context = "" }) => {
+  context = "/",
+  nodeModule = "/" }) => {
 
-  src = await transform(src, context)
+  src = await transform(src, context, nodeModule)
 
   // The decorated plugins should append this, but for now we add here to simplify
   src += ';const __contract = new __contract_name();const __metadata = {}'

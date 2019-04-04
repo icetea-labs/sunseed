@@ -6,34 +6,34 @@ class IceTea {
     this.data = data
   }
 
-  run(klass) {
-    const declarations = klass.declarations
-    if(declarations.length === 1) {
-      const declaration = declarations[0]
-      if(declaration.type === 'VariableDeclarator' && declaration.init && declaration.init.type === 'CallExpression' && declaration.init.callee.name === 'require') {
-        const arguments_ = declaration.init.arguments
-        if(arguments_.length === 1 && arguments_[0].type === 'StringLiteral') {
-          const value = arguments_[0].value
-          const code = this.data[value]
-
-          if(!code) {
-            throw this.buildError('source not found', klass)
-          }
-
-          const fn = template.expression(`
-            (function () {
-              const module={exports:{}};
-              const exports=module.exports;
-              CODE
-              return module.exports
-            })()
-          `);
-          declaration.init = fn({
-            CODE: code
-          })
-        }
-      }
+  run(path) {
+    const node = path.node
+    if(!node || node.callee.name !== 'require') {
+      return
     }
+    const arguments_ = node.arguments
+    if(arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
+      return
+    }
+    const value = arguments_[0].value
+    const code = this.data[value]
+
+    if(!code) {
+      throw this.buildError('external source not found', klass)
+    }
+
+    const fn = template.expression(`
+      (function () {
+        const module={exports:{}};
+        const exports=module.exports;
+        CODE
+        return module.exports
+      })()
+    `);
+
+    path.replaceWith(fn({
+      CODE: code
+    }))
   }
 
   buildError (message, nodePath) {
@@ -50,8 +50,8 @@ module.exports = function (data) {
   
     return {
       visitor: {
-        VariableDeclaration: function (node) {
-          new IceTea(t, data).run(node.node);
+        CallExpression: function (path) {
+          new IceTea(t, data).run(path);
         }
       }
     };
