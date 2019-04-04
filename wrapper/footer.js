@@ -1,25 +1,3 @@
-/** @module */
-
-/**
- * conver decorated js to js
- * @function
- * @param {string} src - src
- * @returns {string} generated code
- */
-module.exports = src => `
-'use strict';
-const revert = text => {throw new Error(text || "Transaction reverted.")};
-const expect = (condition, text) => {if (!condition) revert(text)}
-const assert = expect;
-
-const {msg, block, tags: __tags, balanceOf, loadContract} = this.getEnv();
-const now = block ? block.timestamp : 0;
-
-assert(typeof msg !== "undefined" && msg, "Invalid or corrupt transaction data.");
-expect(msg.name, "Method name not specified.");
-
-${src}
-
 // block to scope our let/const
 {
     const __name = typeof __metadata[msg.name] === 'string' ? __metadata[msg.name] : msg.name
@@ -88,4 +66,3 @@ ${src}
 
     return __checkType(__c.instance[__name], __metadata[__name], 'fieldType', 'field');
 }
-`

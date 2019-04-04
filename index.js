@@ -1,19 +1,67 @@
 const babel = require('@babel/core')
-const plugin = require('./babel')
-const { resolveExternal } = require('./preprocess')
-const makeWrapper = require('./wrapper')
-
 const prettier = require("prettier")
-const UglifyJS = require("uglify-js")
+// const UglifyJS = require("uglify-js")
+const Terser = require("terser")
+const babelParser = require('@babel/parser')
+const axios = require('axios')
+const fs = require('fs')
+const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
+const path = require('path')
+
+const plugin = require('./babel')
+const resolveExternal = require('./external')
+const importToRequire = require('./import2require')
+const makeWrapper = require('./wrapper')
+const { plugins } = require('./common')
 
 exports.transpile = async (src, { 
-  uglify = false,
-  uglifyOpts = {},
+  minify = false,
+  minifyOpts = {},
   prettier = false,
-  prettierOpts = {} }) => {
+  prettierOpts = {},
+  context = "" }) => {
 
-  // first, preprocess
-  src = await resolveExternal(src)
+  while(true) {
+    // fetch resources first
+    src = await babelify(src, [importToRequire])
+    let hasRequire = false
+    let result = {}
+    const parsed = babelParser.parse(src, {
+      sourceType: "module",
+      plugins
+    })
+    const bodies = parsed.program.body
+    await Promise.all(bodies.map(async body => {
+      if(body.type === 'VariableDeclaration') {
+        if(body.declarations.length === 1) {
+          const declaration = body.declarations[0]
+          if(declaration.type === 'VariableDeclarator' && declaration.init.type === 'CallExpression' && declaration.init.callee.name === 'require') {
+            const arguments = declaration.init.arguments
+            if(arguments.length === 1 && arguments[0].type === 'StringLiteral') {
+              const value = arguments[0].value
+              if(value.startsWith('http://') || value.startsWith('https://')) {
+                result[value] = (await axios.get(value)).data
+              } else {
+                let filePath = value
+                if(context && !value.startsWith("/")) {
+                  filePath = path.resolve(context, filePath)
+                }
+                result[value] = fs.readFileSync(filePath).toString()
+              }
+              hasRequire = true
+            }
+          }
+        }
+      }
+    }))
+
+    if(!hasRequire) {
+      break 
+    }
+
+    // first, preprocess
+    src = await babelify(src, [resolveExternal(result)])
+  }
 
   // The decorated plugins should append this, but for now we add here to simplify
   src += ';const __contract = new __contract_name();const __metadata = {}'
@@ -21,18 +69,21 @@ exports.transpile = async (src, {
   src = babelify(src, [plugin])
 
   // remove flow types
-  src = babelify(src,['@babel/plugin-transform-flow-strip-types'])
+  src = babelify(src, [flowPlugin])
 
   // finally, wrap it
   src = makeWrapper(src).trim()
 
+  // preparation for minified
+  src = prettify(src, {semi: true})
+
   if (prettier) {
     src = prettify(src, prettierOpts)
-  } else if (uglify) {
-    src = minify(src, uglifyOpts)
+  } else if (minify) {
+    src = doMinify(src, minifyOpts)
   }
 
-  console.log(src)
+  // console.log(src)
 
   return src
 }
@@ -40,7 +91,7 @@ exports.transpile = async (src, {
 function babelify (src, plugins, sourceFilename = 'Contract source') {
   return babel.transformSync(src, {
     parserOpts: {
-      sourceType: 'script',
+      sourceType: 'module',
       strictMode: true,
       sourceFilename,
       allowReturnOutsideFunction: true,
@@ -80,14 +131,15 @@ function babelify (src, plugins, sourceFilename = 'Contract source') {
 }
 
 function prettify(src, opts = {}) {
-  return prettier.format(src, { semi: false, parser: "babel", ...opts })
+  return prettier.format(src, { parser: "babel", ...opts })
 }
 
-function minify(src, opts = {}) {
-  return UglifyJS.minify(src, { 
+function doMinify(src, opts = {}) {
+  const result = Terser.minify(src, {
     parse: {
       bare_returns: true
     },
     ...opts
   })
+  return result.code
 }

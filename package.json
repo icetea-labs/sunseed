@@ -17,10 +17,14 @@
   },
   "homepage": "https://github.com/TradaTech/sunseed#readme",
   "dependencies": {
-    "@babel/core": "^7.4.0",
-    "@babel/plugin-transform-flow-strip-types": "^7.4.0",
-    "node-fetch": "^2.3.0",
-    "prettier": "^1.16.4",
-    "uglify-js": "^3.5.2"
+    "@babel/core": "7.4.0",
+    "@babel/parser": "7.4.2",
+    "@babel/plugin-transform-flow-strip-types": "7.4.0",
+    "@babel/template": "7.4.0",
+    "@babel/types": "7.4.0",
+    "axios": "0.18.0",
+    "node-fetch": "2.3.0",
+    "prettier": "1.16.4",
+    "terser": "3.17.0"
   }
 }
