@@ -1,18 +1,11 @@
 const babel = require('@babel/core')
 const prettier = require("prettier")
-// const UglifyJS = require("uglify-js")
 const Terser = require("terser")
-const babelParser = require('@babel/parser')
-const axios = require('axios')
-const fs = require('fs')
 const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
-const path = require('path')
 
 const plugin = require('./babel')
-const resolveExternal = require('./external')
-const importToRequire = require('./import2require')
 const makeWrapper = require('./wrapper')
-const { plugins } = require('./common')
+const { transform } = require('./transform')
 
 exports.transpile = async (src, { 
   minify = false,
@@ -21,47 +14,7 @@ exports.transpile = async (src, {
   prettierOpts = {},
   context = "" }) => {
 
-  while(true) {
-    // fetch resources first
-    src = await babelify(src, [importToRequire])
-    let hasRequire = false
-    let result = {}
-    const parsed = babelParser.parse(src, {
-      sourceType: "module",
-      plugins
-    })
-    const bodies = parsed.program.body
-    await Promise.all(bodies.map(async body => {
-      if(body.type === 'VariableDeclaration') {
-        if(body.declarations.length === 1) {
-          const declaration = body.declarations[0]
-          if(declaration.type === 'VariableDeclarator' && declaration.init.type === 'CallExpression' && declaration.init.callee.name === 'require') {
-            const arguments = declaration.init.arguments
-            if(arguments.length === 1 && arguments[0].type === 'StringLiteral') {
-              const value = arguments[0].value
-              if(value.startsWith('http://') || value.startsWith('https://')) {
-                result[value] = (await axios.get(value)).data
-              } else {
-                let filePath = value
-                if(context && !value.startsWith("/")) {
-                  filePath = path.resolve(context, filePath)
-                }
-                result[value] = fs.readFileSync(filePath).toString()
-              }
-              hasRequire = true
-            }
-          }
-        }
-      }
-    }))
-
-    if(!hasRequire) {
-      break 
-    }
-
-    // first, preprocess
-    src = await babelify(src, [resolveExternal(result)])
-  }
+  src = await transform(src, context)
 
   // The decorated plugins should append this, but for now we add here to simplify
   src += ';const __contract = new __contract_name();const __metadata = {}'

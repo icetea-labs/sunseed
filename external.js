@@ -10,7 +10,7 @@ class IceTea {
     const declarations = klass.declarations
     if(declarations.length === 1) {
       const declaration = declarations[0]
-      if(declaration.type === 'VariableDeclarator' && declaration.init.type === 'CallExpression' && declaration.init.callee.name === 'require') {
+      if(declaration.type === 'VariableDeclarator' && declaration.init && declaration.init.type === 'CallExpression' && declaration.init.callee.name === 'require') {
         const arguments_ = declaration.init.arguments
         if(arguments_.length === 1 && arguments_[0].type === 'StringLiteral') {
           const value = arguments_[0].value
@@ -26,7 +26,7 @@ class IceTea {
               const exports=module.exports;
               CODE
               return module.exports
-            }).call(global)
+            })()
           `);
           declaration.init = fn({
             CODE: code
