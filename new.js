@@ -102,7 +102,7 @@ function getTypeParams (params) {
 // const STATE_CHANGE_DECORATORS = ['transaction', 'view', 'pure', 'payable']
 const METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable']
 const PROPERTY_DECORATORS = ['state', 'pure']
-const SYSTEM_DECORATORS = ['onReceived']
+const SYSTEM_DECORATORS = ['onReceived', 'onreceive']
 // const SPECIAL_MEMBERS = ['constructor', '__on_deployed', '__on_received']
   
 module.exports = function ({ types: t }) {
@@ -169,13 +169,13 @@ class IceTea {
     if(!decorators.every(decorator => {
       return PROPERTY_DECORATORS.includes(decorator.expression.name)
     })) {
-      this.buildError('Only @state, @pure for property', node)
+      throw this.buildError('Only @state, @pure for property', node)
     }
 
     const states = this.findDecorators(node, "state");
     const name = node.key.name || ( '#' + node.key.id.name) // private property does not have key.name
 
-    if(node.value) {
+    if(node.value && !this.isConstant(node.value)) {
       const klassPath = path.parentPath.parentPath
       let onDeploy = this.findMethod(klassPath.node, '__on_deployed')
       if(!onDeploy) {
@@ -208,7 +208,7 @@ class IceTea {
 
     if(states.length > 0) {
       if(isMethod(node)) {
-        this.buildError('function cannot be decorated as @state', node)
+        throw this.buildError('function cannot be decorated as @state', node)
       }
 
       this.wrapState(path)
@@ -247,18 +247,18 @@ class IceTea {
   classMethod(klass) {
     const name = klass.key.name || ( '#' + klass.key.id.name)
     if(name === '__on_received') {
-      this.buildError('__on_received cannot be specified directly.', klass)
+      throw this.buildError('__on_received cannot be specified directly.', klass)
     }
     if (name === '__on_deployed') {
       if(this.__on_deployed > 0) {
-        this.buildError('__on_deployed cannot be specified directly.', klass)
+        throw this.buildError('__on_deployed cannot be specified directly.', klass)
       }
       this.__on_deployed += 1
     }
     if(name.startsWith('#')) {
       const payables = this.findDecorators(klass, 'payable')
       if(payables.length > 0) {
-        this.buildError('Private function cannot be payable', klass)
+        throw this.buildError('Private function cannot be payable', klass)
       }
     }
 
@@ -277,7 +277,7 @@ class IceTea {
       }
     }
 
-    const onreceives = this.findDecorators(klass, 'onReceived')
+    const onreceives = this.findDecorators(klass, 'onReceived', 'onreceive')
     if(onreceives.length > 0) {
       this.metadata['__on_received'] = klass.key.name
     }
@@ -287,10 +287,10 @@ class IceTea {
 
   exit(node) {
     if(numberOfContracts === 0) {
-      this.buildError("Your smart contract does not have @contract.", node);
+      throw this.buildError("Your smart contract does not have @contract.", node);
     }
     if (numberOfContracts > 1) {
-      this.buildError("Your smart contract has more than one @contract.", node);
+      throw this.buildError("Your smart contract has more than one @contract.", node);
     }
 
     let name = contractName
@@ -381,9 +381,9 @@ class IceTea {
 
   buildError(message, nodePath) {
     if (nodePath && nodePath.buildCodeFrameError) {
-      throw nodePath.buildCodeFrameError(message);
+      return nodePath.buildCodeFrameError(message);
     }
-    throw new SyntaxError(message);
+    return new SyntaxError(message);
   }
 
   findDecorators(klass, ...names) {
@@ -399,5 +399,26 @@ class IceTea {
         klass.decorators.splice(index, 1);
       }
     });
+  }
+
+  isConstant(value) {
+    const { types } = this
+    if(types.isLiteral(value) && value.type !== 'TemplateLiteral') {
+      return true
+    }
+    if(value.type === 'ArrayExpression') {
+      return value.elements && value.elements.every(element => {
+        return this.isConstant(element)
+      })
+    }
+    if(value.type === 'BinaryExpression') {
+      return value.left && value.right && this.isConstant(value.left) && this.isConstant(value.right)
+    }
+    if(value.type === 'ObjectExpression') {
+      return value.properties && value.properties.every(property => {
+        return property.key.type !== 'TemplateLiteral' && this.isConstant(property.value)
+      })
+    }
+    return false
   }
 }
