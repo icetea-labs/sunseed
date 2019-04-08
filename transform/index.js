@@ -9,7 +9,7 @@ const resolveExternal = require('../external')
 const importToRequire = require('../import2require')
 const babelify = require('./babelify')
 
-exports.transform = async (src, context = "/", node_module="/") => {
+exports.transform = async (src, context = "/") => {
   src = await babelify(src, [importToRequire])
   const parsed = babelParser.parse(src, {
     sourceType: "module",
@@ -47,22 +47,15 @@ exports.transform = async (src, context = "/", node_module="/") => {
     }
     if(isNodeModule(value)) {
       if(!isWhitelistModule(value)) {
-        const filePath = path.resolve(node_module, value, 'index.js')
+        const filePath = require.resolve(value)
         const data = fs.readFileSync(filePath).toString()
-        requires[value] = await exports.transform(data, path.dirname(filePath), node_module)
+        requires[value] = await exports.transform(data, path.dirname(filePath))
       }
       return
     }
-    let filePath = path.resolve(context, value)
-    if(!filePath.endsWith('.js')) {
-      if(fs.existsSync(filePath + ".js")) {
-        filePath += ".js"
-      } else {
-        filePath += "/index.js"
-      }
-    }
+    const filePath = require.resolve(path.resolve(context, value))
     const data = fs.readFileSync(filePath).toString()
-    requires[value] = await exports.transform(data, path.dirname(filePath), node_module)
+    requires[value] = await exports.transform(data, path.dirname(filePath))
   }))
 
   if(requires === {}) {
