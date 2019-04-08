@@ -2,7 +2,9 @@ const validate = require("validate-npm-package-name")
 
 exports.plugins = [
   "decorators-legacy",
-  "classProperties"
+  "classProperties",
+  'flow',
+  'flowComments',
 ]
 
 exports.isHttp = (value) => {
