@@ -1,41 +1,100 @@
-const { babelify } = require('./transform')
+const { babelify, transform } = require('./transform')
 const old = require('./babel')
 
 let src = `
-@contract class Withdraw {
-    @state owner = msg.sender;
-    @state fund = {};
+const { SurveyBot, Message } = require('https://raw.githubusercontent.com/TradaTech/icetea/master/icetea/bot/index.js')
 
-    // a private helper
-    // we use property syntax, but method syntax should also work, like this
-    // #changeFund(delta) {
-    //     this.fund[msg.sender] = (this.fund[msg.sender] || 0) + delta;
-    // }
-    #changeFund = delta => {
-        this.fund[msg.sender] = (this.fund[msg.sender] || 0) + delta;
+const RATE = 5
+const MAX = 6
+const MAX_BET = 5
+
+@contract class DiceBot extends SurveyBot {
+    @pure getName() {
+        return 'Dice Bot'
     }
 
-    @onReceived receive() {
-        this.#changeFund(msg.value);
+    @pure getDescription() {
+        return 'Play dice game.'
     }
 
-    @transaction withdraw() {
-        const available = +this.fund[msg.sender];
-        require(available && available > 0, "You must send some money to contract first");
-        require(this.balance > 0, "Contract out of money, please come back later.");
+    @pure getSteps() {
+        return ['Starting','Number', 'Amount', 'Confirm']
+    }
+
+    succeedStarting() {
+        const m = Message
+        .text('Pick your number.')
+        .buttonRow()
+
+        for (let i = 1; i <= MAX; i++) {
+          m.button(String(i))
+        }
+
+        return m.endRow().done()
+    }
+
+    collectNumber(number, collector) {
+        return collector.number = number
+    }
+
+    succeedNumber(number) {
+      const max = this.#getMaxBet()
+        return Message.input('Bet amount', {
+              value: parseInt(max),
+              sub_type: 'number'
+            })
+            .done()
+    }
+
+    collectAmount(amount, collector) {
+      amount = +amount
+      if (amount <= 0 || amount > this.#getMaxBet()) {
+        throw new Error('Invalid bet amount')
+      }
+        return collector.amount = +amount
+    }
+
+    failAmount(amount) {
+      const max = this.#getMaxBet()
+      return Message.input('Bet amount', {
+            value: parseInt(max),
+            sub_type: 'number'
+          })
+          .done() 
+    }
+
+    succeedAmount(amount, collector) {
         
-        const amount = (available < this.balance)?available:this.balance;
-
-        this.#changeFund(-amount);
-        this.transfer(msg.sender, amount);
     }
 
-    @transaction backdoor(value = this.balance) {
-        require(msg.sender === this.owner, "Only owner can use this backdoor");
-        this.transfer(msg.sender, value);
-    }
+    succeedConfirm(confirm, collector) {
+      const r = this.#randomize()
+      const win = (r === +collector.number)
+      const receiveAmount = win ? msg.value * RATE : 0
+      if (receiveAmount) {
+        this.transfer(msg.sender, receiveAmount)
+      }
+      return Message.html("cc")
+        .button('Restart')
+        .done()
+  }
+
+  #randomize() {
+    return parseInt(block.hash.substr(-16), 16) % MAX + 1
+  }
+
+  #getMaxBet() {
+    return Math.min(this.balance / (RATE - 1), MAX_BET)
+  }
+    
 }
 `
 
-src += ';const __contract = new __contract_name();const __metadata = {}'
-console.log(babelify(src, [old]))
+async function main() {
+  src += ';const __contract = new __contract_name();const __metadata = {}'
+  src = await transform(src)
+  src = babelify(src, [old])
+  console.log(src)
+}
+
+main()

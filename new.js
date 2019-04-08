@@ -245,34 +245,35 @@ class IceTea {
   }
 
   classMethod(klass) {
-    if(klass.key.name === '__on_received') {
+    const name = klass.key.name || ( '#' + klass.key.id.name)
+    if(name === '__on_received') {
       this.buildError('__on_received cannot be specified directly.', klass)
     }
-    if (klass.key.name === '__on_deployed') {
+    if (name === '__on_deployed') {
       if(this.__on_deployed > 0) {
         this.buildError('__on_deployed cannot be specified directly.', klass)
       }
       this.__on_deployed += 1
     }
-    if(klass.key.name.startsWith('#')) {
-      const payable = this.findDecorators(klass, 'payable')
-      if(payable) {
+    if(name.startsWith('#')) {
+      const payables = this.findDecorators(klass, 'payable')
+      if(payables.length > 0) {
         this.buildError('Private function cannot be payable', klass)
       }
     }
 
     const decorators = klass.decorators || []
-    if(!this.metadata[klass.key.name]) {
-      this.metadata[klass.key.name] = {
+    if(!this.metadata[name]) {
+      this.metadata[name] = {
         type: klass.type,
         decorators: decorators.map(decorator => decorator.expression.name),
         returnType: getTypeName(klass.returnType),
         params: getTypeParams(klass.params)
       }
-      if(!this.metadata[klass.key.name].decorators.some(decorator => {
+      if(!this.metadata[name].decorators.some(decorator => {
         return METHOD_DECORATORS.includes(decorator);
       })) {
-        this.metadata[klass.key.name].decorators.push('view')
+        this.metadata[name].decorators.push('view')
       }
     }
 

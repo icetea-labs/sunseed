@@ -5,6 +5,25 @@ exports.plugins = [
   "classProperties",
   'flow',
   'flowComments',
+  'asyncGenerators',
+  'bigInt',
+  'classPrivateMethods',
+  'classPrivateProperties',
+  'classProperties',
+  'doExpressions',
+  'flow',
+  'flowComments',
+  'functionBind',
+  'functionSent',
+  'jsx',
+  'logicalAssignment',
+  'nullishCoalescingOperator',
+  'numericSeparator',
+  'objectRestSpread',
+  'optionalCatchBinding',
+  'optionalChaining',
+  ['pipelineOperator', { proposal: 'minimal' }],
+  'throwExpressions'
 ]
 
 exports.isHttp = (value) => {

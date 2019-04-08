@@ -1,42 +1,91 @@
 const { transpile } = require('./index')
 
 const src = `
-import { SurveyBot, Message } from 'https://raw.githubusercontent.com/TradaTech/icetea/master/icetea/bot/index.js'
-import * as helper from 'https://raw.githubusercontent.com/TradaTech/icetea/master/example/astrobot/helper.js'
+const { SurveyBot, Message } = require('https://raw.githubusercontent.com/TradaTech/icetea/master/icetea/bot/index.js')
 
-@contract class AstroBot extends SurveyBot {
+const RATE = 5
+const MAX = 6
+const MAX_BET = 5
 
+@contract class DiceBot extends SurveyBot {
     @pure getName() {
-        return 'Thầy Măng Cụt'
+        return 'Dice Bot'
     }
 
     @pure getDescription() {
-        return 'Thầy Măng Cụt biết nhiều thứ, nhưng ông chỉ nói đủ.'
+        return 'Play dice game.'
     }
 
     @pure getSteps() {
-        return ['Boarding', 'Terms', 'Name', 'Gender', 'Dob', 'Hour']
+        return ['Starting','Number', 'Amount', 'Confirm']
     }
 
-    succeedBoarding() {
-        return Message.html('Kính chào quý khách. Tôi là <i>Thầy Măng Cụt</i>,' + 
-            ' chuyên hành nghề bói Tử Vi trên Icetea blockchain.', 'html')
-            .text('Nếu bạn muốn xem thì bấm nút phía dưới. Không muốn thì thôi.')
-            .button('Tôi là người Việt và sinh ở Việt Nam', 'start')
+    succeedStarting() {
+        const m = Message
+        .text('Pick your number.')
+        .buttonRow()
+
+        for (let i = 1; i <= MAX; i++) {
+          m.button(String(i))
+        }
+
+        return m.endRow().done()
+    }
+
+    collectNumber(number, collector) {
+        return collector.number = number
+    }
+
+    succeedNumber(number) {
+      const max = this.#getMaxBet()
+        return Message.input('Bet amount', {
+              value: parseInt(max),
+              sub_type: 'number'
+            })
             .done()
     }
 
-    succeedTerms() {
-        return Message.text('Tốt quá. Vì tôi không biết xem cho người nước ngoài hoặc sinh ở nước ngoài.')
-            .text('Đầu tiên, hãy cho biết tên (bao gồm cả tên lót nếu nó là riêng của bạn)')
-            .input('Ngọc Trinh')
-            .done()
+    collectAmount(amount, collector) {
+      amount = +amount
+      if (amount <= 0 || amount > this.#getMaxBet()) {
+        throw new Error('Invalid bet amount')
+      }
+        return collector.amount = +amount
     }
 
-    collectName(name, collector) {
-        collector.name = helper.toTitleCase(name)
-        return collector.name
+    failAmount(amount) {
+      const max = this.#getMaxBet()
+      return Message.input('Bet amount', {
+            value: parseInt(max),
+            sub_type: 'number'
+          })
+          .done() 
     }
+
+    succeedAmount(amount, collector) {
+        
+    }
+
+    succeedConfirm(confirm, collector) {
+      const r = this.#randomize()
+      const win = (r === +collector.number)
+      const receiveAmount = win ? msg.value * RATE : 0
+      if (receiveAmount) {
+        this.transfer(msg.sender, receiveAmount)
+      }
+      return Message.html("cc")
+        .button('Restart')
+        .done()
+  }
+
+  #randomize() {
+    return parseInt(block.hash.substr(-16), 16) % MAX + 1
+  }
+
+  #getMaxBet() {
+    return Math.min(this.balance / (RATE - 1), MAX_BET)
+  }
+    
 }
 `
 
