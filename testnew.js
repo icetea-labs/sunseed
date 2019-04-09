@@ -1,5 +1,5 @@
-const { babelify, transform } = require('./transform')
-const new_ = require('./new')
+const { babelify, transform } = require('./src/transform')
+const new_ = require('./src/new')
 
 let src = `
 const { SurveyBot, Message } = require('https://raw.githubusercontent.com/TradaTech/icetea/master/icetea/bot/index.js')
