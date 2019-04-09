@@ -50,6 +50,8 @@ exports.transform = async (src, context = "/") => {
         const filePath = require.resolve(value)
         const data = fs.readFileSync(filePath).toString()
         requires[value] = await exports.transform(data, path.dirname(filePath))
+      } else {
+        delete requires[value]
       }
       return
     }

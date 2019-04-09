@@ -1,4 +1,5 @@
 const template = require("@babel/template");
+const { isNodeModule } = require('./common')
 
 class IceTea {
   constructor(types, data) {
@@ -19,7 +20,10 @@ class IceTea {
     const code = this.data[value]
 
     if(!code) {
-      throw this.buildError('external source not found', klass)
+      if(!isNodeModule(value)) {
+        throw this.buildError('external source not found', klass)
+      }
+      return
     }
 
     const fn = template.expression(`

@@ -1,4 +1,9 @@
 const validate = require("validate-npm-package-name")
+const builtin = require('module').builtinModules
+
+const whiteListModules = [
+  ...builtin
+]
 
 exports.plugins = [
   "decorators-legacy",
@@ -32,9 +37,9 @@ exports.isHttp = (value) => {
 
 exports.isNodeModule = (value) => {
   const { validForNewPackages, validForOldPackages } = validate(value)
-  return validForNewPackages && validForOldPackages
+  return validForNewPackages || validForOldPackages
 }
 
 exports.isWhitelistModule = (value) => {
-  return [].includes(value)
+  return whiteListModules.includes(value)
 }
