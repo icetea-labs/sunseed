@@ -1,37 +1,19 @@
-/*
-function isPublic(type) {
-    return ["ClassMethod", "ClassProperty"].includes(type);
-}
-function isPrivate(type) {
-    return ["ClassPrivateMethod", "ClassPrivateProperty"].includes(type);
-}
-function isClassProperty(type) {
-  return ["ClassProperty", "ClassPrivateProperty"].includes(type);
-}
-*/
-
+const template = require("@babel/template");
+const types = require("@babel/types");
 let numberOfContracts = 0
+let contractName = ""
+let metadata = {}
+let extendData = {}
 
 function isMethod (node) {
-  // console.log(mp);
   if (!node) return false
   const type = node.type
   if (type === 'ClassMethod' || type === 'ClassPrivateMethod') {
     return true
   }
-
-  // check if value is a function or arrow function
   const valueType = node.value && node.value.type
   return valueType === 'FunctionExpression' ||
     valueType === 'ArrowFunctionExpression'
-}
-  
-function buildError (message, nodePath) {
-  if (nodePath && nodePath.buildCodeFrameError) {
-    throw nodePath.buildCodeFrameError(message)
-  }
-
-  throw new SyntaxError(message)
 }
 
 const SUPPORTED_TYPES = ['number', 'string', 'boolean', 'bigint', 'null', 'undefined',
@@ -97,245 +79,41 @@ function getTypeName (node, insideUnion) {
   }
   return result !== 'any' && Array.isArray(result) ? result : [result]
 }
-  
-function wrapState (t, item, memberMeta) {
-  const name = item.node.key.name || ('#' + item.node.key.id.name)
-  const initVal = item.node.value
-  const initValIsLiteral = initVal && t.isLiteral(initVal)
-  const getState = t.identifier('getState')
-  const thisExp = t.thisExpression()
-  const memExp = t.memberExpression(thisExp, getState)
-  const callExpParams = [t.stringLiteral(name)]
-  if (initVal) callExpParams.push(initVal)
-  const callExp = t.callExpression(memExp, callExpParams)
-  const getter = t.classMethod('get', t.identifier(name), [],
-    t.blockStatement([t.returnStatement(callExp)]))
 
-  const setMemExp = t.memberExpression(thisExp, t.identifier('setState'))
-  const setCallExp = t.callExpression(setMemExp, [t.stringLiteral(name), t.identifier('value')])
-  const setter = t.classMethod('set', t.identifier(name), [t.identifier('value')],
-    t.blockStatement([t.expressionStatement(setCallExp)]))
-
-  // replace @state instance variable with a pair of getter and setter
-  item.replaceWithMultiple([getter, setter])
-
-  // if there's initializer, move it into constructor
-  if (initVal && !initValIsLiteral) {
-    let deployer = item.parent.body.find(p => p.key.name === '__on_deployed')
-
-    // if no constructor, create one
-    if (!deployer) {
-      deployer = t.classMethod('method', t.identifier('__on_deployed'), [], t.blockStatement([]))
-      item.parent.body.unshift(deployer)
-      memberMeta['__on_deployed'] = {
-        mp: { node: deployer },
-        type: deployer.type,
-        decorators: ['payable']
+function getTypeParams (params) {
+  return params.map(p => {
+    const item = p.left || p
+    const param = {
+      name: item.name,
+      type: getTypeName(item.typeAnnotation)
+    }
+    if (p.right) {
+      if (types.isNullLiteral(p.right)) {
+        param.defaultValue = null
+      } else if (types.isLiteral(p.right)) {
+        param.defaultValue = p.right.value
       }
     }
-
-    // create a this.item = initVal;
-    const setExp = t.memberExpression(thisExp, t.identifier(name))
-    var assignState = t.expressionStatement(t.assignmentExpression('=', setExp, initVal))
-    deployer.body.body.unshift(assignState)
-  }
+    return param
+  })
 }
   
-function astify (t, literal) {
-  if (literal === null) {
-    return t.nullLiteral()
-  }
-  switch (typeof literal) {
-    case 'function':
-      throw new Error('Not support function')
-    case 'number':
-      return t.numericLiteral(literal)
-    case 'string':
-      return t.stringLiteral(literal)
-    case 'boolean':
-      return t.booleanLiteral(literal)
-    case 'undefined':
-      return t.unaryExpression('void', t.numericLiteral(0), true)
-    default:
-      if (Array.isArray(literal)) {
-        return t.arrayExpression(literal.map(m => astify(t, m)))
-      }
-      return t.objectExpression(Object.keys(literal)
-        .filter((k) => {
-          return /* !SPECIAL_MEMBERS.includes(k) && !k.startsWith('#') && */ typeof literal[k] !== 'undefined'
-        })
-        .map((k) => {
-          return t.objectProperty(
-            t.stringLiteral(k),
-            astify(t, literal[k])
-          )
-        }))
-  }
-}
-  
-const SYSTEM_DECORATORS = ['state', 'onReceived', 'transaction', 'view', 'pure', 'payable']
-const STATE_CHANGE_DECORATORS = ['transaction', 'view', 'pure', 'payable']
+// const SYSTEM_DECORATORS = ['state', 'onReceived', 'transaction', 'view', 'pure', 'payable']
+// const STATE_CHANGE_DECORATORS = ['transaction', 'view', 'pure', 'payable']
+const METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable']
+const PROPERTY_DECORATORS = ['state', 'pure']
+const SYSTEM_DECORATORS = ['onReceived', 'onreceive']
 // const SPECIAL_MEMBERS = ['constructor', '__on_deployed', '__on_received']
   
 module.exports = function ({ types: t }) {
-  let contractName = null
   return {
     visitor: {
-      Decorator (path) {
-        const decoratorName = path.node.expression.name
-        if (decoratorName === 'contract') {
-          if (path.parent.type === 'ClassDeclaration') {
-            // Why comment it: contractName is not good for detect two decorators, module is load once.
-            // if (contractName && contractName !== path.parent.id.name) {
-            //   throw buildError('More than one class marked with @contract. Only one is allowed.', path)
-            // }
-            contractName = path.parent.id.name
-
-            // process constructor
-
-            const m = path.parent.body.body.find(n => n.kind === 'constructor')
-            if (m) {
-              m.kind = 'method'
-              m.key.name = '__on_deployed'
-            }
-
-            // Collect member metadata
-
-            const memberMeta = {}
-
-            const members = path.parentPath.get('body.body')
-            // console.log(members);
-            members.forEach(mp => {
-              const m = mp.node
-              // console.log(mp);
-
-              const propName = m.key.name || ('#' + m.key.id.name)
-              memberMeta[propName] = {
-                mp,
-                type: m.type,
-                decorators: []
-              }
-
-              // process decorators
-              const mds = mp.get('decorators')
-              if (mds && mds.length) {
-                mds.forEach(dp => {
-                  const d = dp.node
-                  const dname = d.expression.name
-
-                  memberMeta[propName].decorators.push(dname)
-
-                  if (dname === 'state') {
-                    if (isMethod(m)) {
-                      throw buildError('Class method cannot be decorated as @state', mp)
-                    }
-                    wrapState(t, mp, memberMeta)
-                  } else if (dname === 'onReceived') {
-                    // const newNode = t.classProperty(t.identifier('__on_received'),
-                    //   t.memberExpression(t.thisExpression(), t.identifier(propName)))
-                    // path.parent.body.body.push(newNode)
-                    // memberMeta['__on_received'] = {
-                    //   mp: {node: newNode},
-                    //   type: newNode.type,
-                    //   decorators: []
-                    // }
-                    memberMeta['__on_received'] = propName
-                  }
-
-                  if (SYSTEM_DECORATORS.includes(dname)) dp.remove()
-                })
-              }
-
-              // process type annotation
-              if (typeof memberMeta[propName] === 'string') {
-                // link to other method, like __on_received => @onReceived. No handle.
-              } if (!isMethod(m)) {
-                memberMeta[propName].fieldType = getTypeName(m.typeAnnotation)
-              } else {
-                const fn = m.value || m
-                memberMeta[propName].returnType = getTypeName(fn.returnType)
-                memberMeta[propName].params = []
-                // process parameters
-                fn.params.forEach(p => {
-                  const item = p.left || p
-                  const param = {
-                    name: item.name,
-                    type: getTypeName(item.typeAnnotation)
-                  }
-                  if (p.right) {
-                    if (t.isNullLiteral(p.right)) {
-                      param.defaultValue = null
-                    } else if (t.isLiteral(p.right)) {
-                      param.defaultValue = p.right.value
-                    }
-                  }
-                  memberMeta[propName].params.push(param)
-                })
-              }
-            })
-
-            // console.log(memberMeta)
-
-            // validate metadata
-
-            Object.keys(memberMeta).forEach(key => {
-              if (typeof memberMeta[key] !== 'string') {
-                const stateDeco = memberMeta[key].decorators.filter(e => STATE_CHANGE_DECORATORS.includes(e))
-                // const isState = memberMeta[key].decorators.includes("state");
-                const mp = memberMeta[key].mp
-                delete memberMeta[key].mp
-                if (!isMethod(mp.node)) {
-                  if (stateDeco.length) {
-                    console.log(key)
-                    throw buildError('State mutability decorators cannot be attached to variables', mp)
-                  } else {
-                    if (memberMeta[key].decorators.includes('state')) {
-                      memberMeta[key].decorators.push('view')
-                    } else {
-                      memberMeta[key].decorators.push('pure')
-                    }
-                  }
-                } else if (key.startsWith('#') && stateDeco.includes('payable')) {
-                  throw buildError('Private function cannot be payable', mp)
-                } else {
-                  if (!stateDeco.length) {
-                    // default to view
-                    memberMeta[key].decorators.push('view')
-                  } else if (stateDeco.length > 1) {
-                    throw buildError(`Could not define multiple state mutablility decorators: ${stateDeco.join(', ')}`, mp)
-                  }
-                }
-              }
-            })
-
-            // add to __metadata
-            // console.log(astify(t, memberMeta))
-
-            const program = path.findParent(p => p.isProgram())
-            const metaDeclare = program.get('body').find(p => p.isVariableDeclaration() && p.node.declarations[0].id.name === '__metadata')
-            if (metaDeclare) {
-              metaDeclare.node.declarations[0].init = astify(t, memberMeta)
-            }
-          }
-          path.remove()
-        }
-      },
-      Identifier (path) {
-        if (path.node.name === '__contract_name') {
-          if (!contractName) {
-            throw buildError('Must have one class marked @contract.', path)
-          }
-          path.node.name = contractName
-        } else if (path.node.name === '__on_deployed' || path.node.name === '__on_received') {
-          throw buildError('__on_deployed and __on_received cannot be specified directly.', path)
-        }
-      },
-      ClassDeclaration: function(node) {
-        new IceTea(t).run(node.node);
+      ClassDeclaration: function(path) {
+        new IceTea(t).classDeclaration(path);
       },
       Program: {
-        exit(node) {
-          new IceTea(t).checkValid(node.node);
+        exit(path) {
+          new IceTea(t).exit(path.node);
         }
       }
     }
@@ -345,31 +123,310 @@ module.exports = function ({ types: t }) {
 class IceTea {
   constructor(types) {
     this.types = types
+    this.__on_deployed = 0
+    this.className = ""
+    this.metadata = {}
   }
 
-  run(klass) {
-    const decorators = this.findDecorators(klass, "contract");
-    numberOfContracts += decorators.length;
-  }
-
-  checkValid(klass) {
-    if (numberOfContracts > 1) {
-      this.buildError("Your smart contract does not have @contract.", klass);
+  classDeclaration(path) {
+    const klass = path.node
+    this.className = klass.id.name
+    if(!metadata[this.className]) {
+      metadata[this.className] = {}
     }
+    this.metadata = metadata[this.className]
+    if(klass.superClass) {
+      extendData[this.className] = klass.superClass.name
+    }
+
+    const contracts = this.findDecorators(klass, "contract");
+    numberOfContracts += contracts.length;
+    const ctor = this.findConstructor(klass);
+    if(ctor) {
+      ctor.kind = "method";
+      ctor.key.name = "__on_deployed";
+      this.replaceSuper(ctor)
+    }
+
+    if(contracts.length > 0) {
+      contractName = klass.id.name
+      this.deleteDecorators(klass, contracts)
+    }
+    
+    path.get('body.body').map(body => {
+      if(['ClassProperty', 'ClassPrivateProperty'].includes(body.node.type)) {
+        this.classProperty(body)
+      } else if(['ClassMethod', 'ClassPrivateMethod'].includes(body.node.type)) {
+        this.classMethod(body.node)
+      }
+    })
+  }
+
+  classProperty(path) {
+    const { node } = path
+    const decorators = node.decorators || []
+
+    if(!decorators.every(decorator => {
+      return PROPERTY_DECORATORS.includes(decorator.expression.name)
+    })) {
+      throw this.buildError('Only @state, @pure for property', node)
+    }
+
+    const states = this.findDecorators(node, "state");
+    const name = node.key.name || ( '#' + node.key.id.name) // private property does not have key.name
+
+    if(node.value && !this.isConstant(node.value) && !isMethod(node)) {
+      const klassPath = path.parentPath.parentPath
+      let onDeploy = this.findMethod(klassPath.node, '__on_deployed')
+      if(!onDeploy) {
+        // class noname is only used for valid syntax
+        const fn = template.smart(`
+          class noname {
+            __on_deployed () {}
+          }
+        `)
+        klassPath.node.body.body.unshift(...fn().body.body)
+        onDeploy = klassPath.node.body.body[0]
+        this.metadata['__on_deployed'] = {
+          type: "ClassMethod",
+          decorators: ["payable"]
+        }
+      }
+      const fn = template.smart(`
+        this.NAME = DEFAULT
+      `)
+      onDeploy.body.body.unshift(fn({
+        NAME: name,
+        DEFAULT: node.value
+      }))
+
+      // initialization is already added constructor
+      if(states.length === 0) {
+        path.remove()
+      }
+    }
+
+    if(states.length > 0) {
+      if(isMethod(node)) {
+        throw this.buildError('function cannot be decorated as @state', node)
+      }
+
+      this.wrapState(path)
+
+      if(!this.metadata[name]) {
+        this.metadata[name] = {
+          type: node.type,
+          decorators: [...decorators.map(decorator => decorator.expression.name), 'view'],
+          fieldType: getTypeName(node.typeAnnotation)
+        }
+      }
+      return
+    }
+
+    if(!this.metadata[name]) {
+      this.metadata[name] = {
+        type: node.type,
+        decorators: decorators.map(decorator => decorator.expression.name),
+      }
+
+      if(!isMethod(node)) {
+        this.metadata[name]['fieldType'] = getTypeName(node.typeAnnotation)
+        if(decorators.length === 0) {
+          this.metadata[name]['decorators'].push('pure')
+        }
+      } else {
+        this.metadata[name]['returnType'] = getTypeName(node.value.returnType)
+        this.metadata[name]['params'] = getTypeParams(node.value.params)
+        if(decorators.length === 0) {
+          this.metadata[name]['decorators'].push('view')
+        }
+      }
+    }
+  }
+
+  classMethod(klass) {
+    const name = klass.key.name || ( '#' + klass.key.id.name)
+    if(name === '__on_received') {
+      throw this.buildError('__on_received cannot be specified directly.', klass)
+    }
+    if (name === '__on_deployed') {
+      if(this.__on_deployed > 0) {
+        throw this.buildError('__on_deployed cannot be specified directly.', klass)
+      }
+      this.__on_deployed += 1
+    }
+    if(name.startsWith('#')) {
+      const payables = this.findDecorators(klass, 'payable')
+      if(payables.length > 0) {
+        throw this.buildError('Private function cannot be payable', klass)
+      }
+    }
+
+    const decorators = klass.decorators || []
+    if(!this.metadata[name]) {
+      this.metadata[name] = {
+        type: klass.type,
+        decorators: decorators.map(decorator => decorator.expression.name),
+        returnType: getTypeName(klass.returnType),
+        params: getTypeParams(klass.params)
+      }
+      if(!this.metadata[name].decorators.some(decorator => {
+        return METHOD_DECORATORS.includes(decorator);
+      })) {
+        this.metadata[name].decorators.push('view')
+      }
+    }
+
+    const onreceives = this.findDecorators(klass, 'onReceived', 'onreceive')
+    if(onreceives.length > 0) {
+      const payables = this.findDecorators(klass, 'payable')
+      if(payables.length === 0 && klass.body.body.length > 0) {
+        throw this.buildError('non-payable @onreceive function should have empty body.', klass)
+      }
+      if(this.metadata['__on_received']) {
+        throw this.buildError('only one @onreceive per class.', klass)
+      }
+      this.metadata['__on_received'] = klass.key.name
+    }
+
+    this.deleteDecorators(klass, this.findDecorators(klass, ...METHOD_DECORATORS, ...SYSTEM_DECORATORS))
+  }
+
+  exit(node) {
+    if(numberOfContracts === 0) {
+      throw this.buildError("Your smart contract does not have @contract.", node)
+    }
+    if (numberOfContracts > 1) {
+      throw this.buildError("Your smart contract has more than one @contract.", node)
+    }
+
+    let name = contractName
+    let parent = extendData[name]
+    while(parent) {
+      metadata[contractName] = {...metadata[parent], ...metadata[contractName]}
+      name = parent
+      parent = extendData[name]
+    }
+
+    this.appendNewCommand(node)
+    this.appendMetadata(node)
+    this.reset()
+  }
+
+  reset() {
     numberOfContracts = 0;
+    contractName = ""
+    metadata = {}
+    extendData = {}
+  }
+
+  replaceSuper(ctor) {
+    ctor.body.body = ctor.body.body.map(body => {
+      if(!body.expression || body.expression.type !== 'CallExpression') {
+        return body
+      }
+      if(body.expression.callee.type === 'Super') {
+        const superTemplate = template.smart(`
+				  super.__on_deployed(ARGUMENTS)
+        `);
+        body = superTemplate({
+          ARGUMENTS: body.expression.arguments
+        })
+      }
+      return body
+    })
+  }
+
+  wrapState(path) {
+    const { node } = path
+    const name = node.key.name || ( '#' + node.key.id.name)
+    const wrap = template.smart(`
+      class noname {
+        get NAME() {
+          return this.getState("NAME", DEFAULT);
+        }
+        set NAME(value) {
+          this.setState("NAME", value);
+        }
+      }
+    `);
+    path.replaceWithMultiple(wrap({
+      NAME: name,
+      DEFAULT: node.value
+    }).body.body)
+  }
+
+  appendNewCommand(node) {
+    const append = template.smart(`
+      const __contract = new NAME();
+    `)
+    node.body.push(append({
+      NAME: contractName
+    }))
+  }
+
+  appendMetadata(node) {
+    const meta = template.smart(`
+      const __metadata = META
+    `)
+    node.body.push(meta({
+      META: this.types.valueToNode(metadata[contractName])
+    }))
+  }
+
+  findConstructor(klass) {
+    return klass.body.body.filter(body => {
+      return body.kind === "constructor";
+    })[0];
+  }
+
+  findMethod(klass, ...names) {
+    return klass.body.body.filter(body => {
+      return body.type === "ClassMethod" && names.includes(body.key.name);
+    })[0];
   }
 
   buildError(message, nodePath) {
+    this.reset()
     if (nodePath && nodePath.buildCodeFrameError) {
-      throw nodePath.buildCodeFrameError(message);
+      return nodePath.buildCodeFrameError(message);
     }
-    throw new SyntaxError(message);
+    return new SyntaxError(message);
   }
 
-  findDecorators(klass, name) {
+  findDecorators(klass, ...names) {
     return (klass.decorators || []).filter(decorator => {
-      return decorator.expression.name === name;
+      return names.includes(decorator.expression.name);
     });
   }
+
+  deleteDecorators(klass, decorators) {
+    decorators.forEach(decorator => {
+      const index = klass.decorators.indexOf(decorator);
+      if (index >= 0) {
+        klass.decorators.splice(index, 1);
+      }
+    });
+  }
+
+  isConstant(value) {
+    const { types } = this
+    if(types.isLiteral(value) && value.type !== 'TemplateLiteral') {
+      return true
+    }
+    if(value.type === 'ArrayExpression') {
+      return value.elements && value.elements.every(element => {
+        return this.isConstant(element)
+      })
+    }
+    if(value.type === 'BinaryExpression') {
+      return value.left && value.right && this.isConstant(value.left) && this.isConstant(value.right)
+    }
+    if(value.type === 'ObjectExpression') {
+      return value.properties && value.properties.every(property => {
+        return property.key.type !== 'TemplateLiteral' && this.isConstant(property.value)
+      })
+    }
+    return false
+  }
 }
-  

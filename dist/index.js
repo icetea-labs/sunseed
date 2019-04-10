@@ -42,8 +42,8 @@ function () {
           case 3:
             src = _context.sent;
             // The decorated plugins should append this, but for now we add here to simplify
-            src += ';const __contract = new __contract_name();const __metadata = {}'; // then, babelify it
-
+            // src += ';const __contract = new __contract_name();const __metadata = {}'
+            // then, babelify it
             src = babelify(src, [plugin]); // remove flow types
 
             src = babelify(src, [flowPlugin]); // finally, wrap it
@@ -63,7 +63,7 @@ function () {
 
             return _context.abrupt("return", src);
 
-          case 11:
+          case 10:
           case "end":
             return _context.stop();
         }

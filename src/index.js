@@ -17,7 +17,7 @@ exports.transpile = async (src, {
   src = await transform(src, context)
 
   // The decorated plugins should append this, but for now we add here to simplify
-  src += ';const __contract = new __contract_name();const __metadata = {}'
+  // src += ';const __contract = new __contract_name();const __metadata = {}'
   // then, babelify it
   src = babelify(src, [plugin])
 
