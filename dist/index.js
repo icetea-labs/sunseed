@@ -8,8 +8,6 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 
-var babel = require('@babel/core');
-
 var prettier = require("prettier");
 
 var Terser = require("terser");
@@ -21,7 +19,8 @@ var plugin = require('./babel');
 var makeWrapper = require('./wrapper');
 
 var _require = require('./transform'),
-    transform = _require.transform;
+    transform = _require.transform,
+    babelify = _require.babelify;
 
 exports.transpile =
 /*#__PURE__*/
@@ -75,32 +74,6 @@ function () {
     return _ref2.apply(this, arguments);
   };
 }();
-
-function babelify(src, plugins) {
-  var sourceFilename = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'Contract source';
-  return babel.transformSync(src, {
-    parserOpts: {
-      sourceType: 'module',
-      strictMode: true,
-      sourceFilename: sourceFilename,
-      allowReturnOutsideFunction: true,
-      allowAwaitOutsideFunction: true,
-      plugins: ['asyncGenerators', 'bigInt', 'classPrivateMethods', 'classPrivateProperties', 'classProperties', ['decorators', {
-        decoratorsBeforeExport: false
-      }], 'doExpressions', // 'dynamicImport',
-      // 'exportDefaultFrom',
-      // 'exportNamespaceFrom',
-      'flow', 'flowComments', 'functionBind', 'functionSent', // 'importMeta',
-      'jsx', 'logicalAssignment', 'nullishCoalescingOperator', 'numericSeparator', 'objectRestSpread', 'optionalCatchBinding', 'optionalChaining', ['pipelineOperator', {
-        proposal: 'minimal'
-      }], 'throwExpressions']
-    },
-    retainLines: false,
-    minified: false,
-    sourceMaps: false,
-    plugins: plugins
-  }).code;
-}
 
 function prettify(src) {
   var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};

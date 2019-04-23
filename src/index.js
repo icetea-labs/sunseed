@@ -1,11 +1,10 @@
-const babel = require('@babel/core')
 const prettier = require("prettier")
 const Terser = require("terser")
 const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
 
 const plugin = require('./babel')
 const makeWrapper = require('./wrapper')
-const { transform } = require('./transform')
+const { transform, babelify } = require('./transform')
 
 exports.transpile = async (src, { 
   minify = false,
@@ -39,48 +38,6 @@ exports.transpile = async (src, {
   // console.log(src)
 
   return src
-}
-
-function babelify (src, plugins, sourceFilename = 'Contract source') {
-  return babel.transformSync(src, {
-    parserOpts: {
-      sourceType: 'module',
-      strictMode: true,
-      sourceFilename,
-      allowReturnOutsideFunction: true,
-      allowAwaitOutsideFunction: true,
-      plugins: [
-        'asyncGenerators',
-        'bigInt',
-        'classPrivateMethods',
-        'classPrivateProperties',
-        'classProperties',
-        ['decorators', { decoratorsBeforeExport: false }],
-        'doExpressions',
-        // 'dynamicImport',
-        // 'exportDefaultFrom',
-        // 'exportNamespaceFrom',
-        'flow',
-        'flowComments',
-        'functionBind',
-        'functionSent',
-        // 'importMeta',
-        'jsx',
-        'logicalAssignment',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        ['pipelineOperator', { proposal: 'minimal' }],
-        'throwExpressions'
-      ]
-    },
-    retainLines: false,
-    minified: false,
-    sourceMaps: false,
-    plugins
-  }).code
 }
 
 function prettify(src, opts = {}) {

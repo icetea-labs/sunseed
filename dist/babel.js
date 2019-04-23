@@ -206,7 +206,7 @@ function () {
       var states = this.findDecorators(node, "state");
       var name = node.key.name || '#' + node.key.id.name; // private property does not have key.name
 
-      if (node.value && !this.isConstant(node.value)) {
+      if (node.value && !this.isConstant(node.value) && !isMethod(node)) {
         var klassPath = path.parentPath.parentPath;
         var onDeploy = this.findMethod(klassPath.node, '__on_deployed');
 

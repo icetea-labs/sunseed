@@ -21,7 +21,7 @@ class IceTea {
 
     if(!code) {
       if(!isNodeModule(value)) {
-        throw this.buildError('external source not found', klass)
+        throw this.buildError('external source not found', node)
       }
       return
     }

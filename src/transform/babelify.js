@@ -1,4 +1,5 @@
 const babel = require('@babel/core')
+const { plugins: babelPlugins } = require('../common')
 
 module.exports = (src, plugins, sourceFilename = 'Contract source') => {
   return babel.transformSync(src, {
@@ -8,32 +9,7 @@ module.exports = (src, plugins, sourceFilename = 'Contract source') => {
       sourceFilename,
       allowReturnOutsideFunction: true,
       allowAwaitOutsideFunction: true,
-      plugins: [
-        'asyncGenerators',
-        'bigInt',
-        'classPrivateMethods',
-        'classPrivateProperties',
-        'classProperties',
-        ['decorators', { decoratorsBeforeExport: false }],
-        'doExpressions',
-        // 'dynamicImport',
-        // 'exportDefaultFrom',
-        // 'exportNamespaceFrom',
-        'flow',
-        'flowComments',
-        'functionBind',
-        'functionSent',
-        // 'importMeta',
-        'jsx',
-        'logicalAssignment',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        ['pipelineOperator', { proposal: 'minimal' }],
-        'throwExpressions'
-      ]
+      plugins: babelPlugins
     },
     retainLines: false,
     minified: false,
