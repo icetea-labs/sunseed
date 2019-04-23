@@ -14,8 +14,6 @@ exports.transpile = async (src, {
   prettierOpts = {},
   context = "/" }) => {
 
-  src = await transform(src, context)
-
   // The decorated plugins should append this, but for now we add here to simplify
   // src += ';const __contract = new __contract_name();const __metadata = {}'
   // then, babelify it
@@ -23,6 +21,9 @@ exports.transpile = async (src, {
 
   // remove flow types
   src = babelify(src, [flowPlugin])
+
+  // don't know, maybe babel not support decorators along to private property
+  src = await transform(src, context)
 
   // finally, wrap it
   src = makeWrapper(src).trim()

@@ -37,18 +37,19 @@ function () {
         switch (_context.prev = _context.next) {
           case 0:
             _ref$minify = _ref.minify, minify = _ref$minify === void 0 ? false : _ref$minify, _ref$minifyOpts = _ref.minifyOpts, minifyOpts = _ref$minifyOpts === void 0 ? {} : _ref$minifyOpts, _ref$prettier = _ref.prettier, prettier = _ref$prettier === void 0 ? false : _ref$prettier, _ref$prettierOpts = _ref.prettierOpts, prettierOpts = _ref$prettierOpts === void 0 ? {} : _ref$prettierOpts, _ref$context = _ref.context, context = _ref$context === void 0 ? "/" : _ref$context;
-            _context.next = 3;
-            return transform(src, context);
-
-          case 3:
-            src = _context.sent;
             // The decorated plugins should append this, but for now we add here to simplify
             // src += ';const __contract = new __contract_name();const __metadata = {}'
             // then, babelify it
             src = babelify(src, [plugin]); // remove flow types
 
-            src = babelify(src, [flowPlugin]); // finally, wrap it
+            src = babelify(src, [flowPlugin]); // don't know, maybe babel not support decorators along to private property
 
+            _context.next = 5;
+            return transform(src, context);
+
+          case 5:
+            src = _context.sent;
+            // finally, wrap it
             src = makeWrapper(src).trim(); // preparation for minified
 
             src = prettify(src, {
