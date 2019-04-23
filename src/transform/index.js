@@ -37,6 +37,10 @@ exports.transform = async (src, context = "/") => {
       requires[value] = await exports.transform(data, value)
       return
     }
+    if (isNodeModule(value) && isWhitelistModule(value)) {
+      delete requires[value]
+      return
+    }
     if(isHttp(context)) {
       if(isNodeModule(value)) {
         throw new Error('Cannot use node_module in remote url')
@@ -50,8 +54,6 @@ exports.transform = async (src, context = "/") => {
         const filePath = require.resolve(value)
         const data = fs.readFileSync(filePath).toString()
         requires[value] = await exports.transform(data, path.dirname(filePath))
-      } else {
-        delete requires[value]
       }
       return
     }
