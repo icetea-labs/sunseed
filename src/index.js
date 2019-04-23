@@ -1,4 +1,5 @@
-const prettier = require("prettier")
+const prettier = require("prettier/standalone");
+const plugins = [require("prettier/parser-babylon")];
 const Terser = require("terser")
 const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
 
@@ -41,7 +42,7 @@ exports.transpile = async (src, {
 }
 
 function prettify(src, opts = {}) {
-  return prettier.format(src, { parser: "babel", ...opts })
+  return prettier.format(src, { parser: "babel", plugins });
 }
 
 function doMinify(src, opts = {}) {
@@ -49,7 +50,12 @@ function doMinify(src, opts = {}) {
     parse: {
       bare_returns: true
     },
+    keep_classnames: true,
+    keep_fnames: true,
     ...opts
   })
+  if (result.error) {
+    throw new Error(JSON.stringify(result.error))
+  }
   return result.code
 }

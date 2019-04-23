@@ -104,60 +104,65 @@ function () {
                         return _context.abrupt("return");
 
                       case 8:
+                        if (!(isNodeModule(value) && isWhitelistModule(value))) {
+                          _context.next = 11;
+                          break;
+                        }
+
+                        delete requires[value];
+                        return _context.abrupt("return");
+
+                      case 11:
                         if (!isHttp(context)) {
-                          _context.next = 18;
+                          _context.next = 21;
                           break;
                         }
 
                         if (!isNodeModule(value)) {
-                          _context.next = 11;
+                          _context.next = 14;
                           break;
                         }
 
                         throw new Error('Cannot use node_module in remote url');
 
-                      case 11:
-                        _context.next = 13;
+                      case 14:
+                        _context.next = 16;
                         return axios.get(url.resolve(context, value));
 
-                      case 13:
+                      case 16:
                         _data2 = _context.sent.data;
-                        _context.next = 16;
+                        _context.next = 19;
                         return exports.transform(_data2, url.resolve(context, value));
 
-                      case 16:
+                      case 19:
                         requires[value] = _context.sent;
                         return _context.abrupt("return");
 
-                      case 18:
+                      case 21:
                         if (!isNodeModule(value)) {
                           _context.next = 29;
                           break;
                         }
 
                         if (isWhitelistModule(value)) {
-                          _context.next = 27;
+                          _context.next = 28;
                           break;
                         }
 
-                        _filePath = require.resolve(value);
+                        _filePath = require.resolve("".concat(value)); // to ignore webpack warning
+
                         _data3 = fs.readFileSync(_filePath).toString();
-                        _context.next = 24;
+                        _context.next = 27;
                         return exports.transform(_data3, path.dirname(_filePath));
 
-                      case 24:
-                        requires[value] = _context.sent;
-                        _context.next = 28;
-                        break;
-
                       case 27:
-                        delete requires[value];
+                        requires[value] = _context.sent;
 
                       case 28:
                         return _context.abrupt("return");
 
                       case 29:
-                        filePath = require.resolve(path.resolve(context, value));
+                        filePath = require.resolve("".concat(path.resolve(context, value)));
                         data = fs.readFileSync(filePath).toString();
                         _context.next = 33;
                         return exports.transform(data, path.dirname(filePath));

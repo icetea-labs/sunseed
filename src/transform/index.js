@@ -51,13 +51,13 @@ exports.transform = async (src, context = "/") => {
     }
     if(isNodeModule(value)) {
       if(!isWhitelistModule(value)) {
-        const filePath = require.resolve(value)
+        const filePath = require.resolve(`${value}`) // to ignore webpack warning
         const data = fs.readFileSync(filePath).toString()
         requires[value] = await exports.transform(data, path.dirname(filePath))
       }
       return
     }
-    const filePath = require.resolve(path.resolve(context, value))
+    const filePath = require.resolve(`${path.resolve(context, value)}`)
     const data = fs.readFileSync(filePath).toString()
     requires[value] = await exports.transform(data, path.dirname(filePath))
   }))

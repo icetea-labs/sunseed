@@ -8,7 +8,9 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 
-var prettier = require("prettier");
+var prettier = require("prettier/standalone");
+
+var plugins = [require("prettier/parser-babylon")];
 
 var Terser = require("terser");
 
@@ -77,9 +79,10 @@ function () {
 
 function prettify(src) {
   var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  return prettier.format(src, (0, _objectSpread2["default"])({
-    parser: "babel"
-  }, opts));
+  return prettier.format(src, {
+    parser: "babel",
+    plugins: plugins
+  });
 }
 
 function doMinify(src) {
@@ -87,7 +90,14 @@ function doMinify(src) {
   var result = Terser.minify(src, (0, _objectSpread2["default"])({
     parse: {
       bare_returns: true
-    }
+    },
+    keep_classnames: true,
+    keep_fnames: true
   }, opts));
+
+  if (result.error) {
+    throw new Error(JSON.stringify(result.error));
+  }
+
   return result.code;
 }
