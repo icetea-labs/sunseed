@@ -35,9 +35,14 @@ class IceTea {
       })()
     `);
 
-    path.replaceWith(fn({
-      CODE: code
-    }))
+    if(value.endsWith('.js')) {
+      path.replaceWith(fn({
+        CODE: code
+      }))
+    }
+    if(value.endsWith('.json')) {
+      path.replaceWith(this.types.valueToNode(code))
+    }
   }
 
   buildError (message, nodePath) {

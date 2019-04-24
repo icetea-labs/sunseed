@@ -1,6 +1,6 @@
 const Terser = require("terser")
 const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const { babelify, transform } = require('../src/transform')
 
 test('constructor to deploy', () => {
   let src = `
@@ -44,5 +44,27 @@ test('non constant', () => {
   src = babelify(src, [plugin])
   const { error }  = Terser.minify(src)
   expect(error.message).toBe('Unexpected token: operator (=)')
+})
+
+test('json remote', async () => {
+  let src = `
+    const test = require('https://gist.githubusercontent.com/Sotatek-DucPham/4b06f0eafc710a9ce54615c5d3d7e98d/raw/f1cf29bdac9d09d59f996f512c83f6d09c0710a2/test.json')
+    @contract class A {}
+  `
+  src = await transform(src)
+  src = babelify(src, [plugin])
+  src = Terser.minify(src).code
+  expect(src).toBe('const test={test:1};class A{}const __contract=new A,__metadata={};')
+})
+
+test('js remote', async () => {
+  let src = `
+    const test = require('https://gist.githubusercontent.com/Sotatek-DucPham/2ff57e279116fd9e7ee3ae39b4e81860/raw/d5c5c2716d60b507c7f52ac99b7d5653230ed513/test.js')
+    @contract class A {}
+  `
+  src = await transform(src)
+  src = babelify(src, [plugin])
+  src = Terser.minify(src).code
+  expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=(()=>"test"),t.exports}();class A{}const __contract=new A,__metadata={};')
 })
 

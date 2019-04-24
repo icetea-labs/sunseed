@@ -33,8 +33,19 @@ exports.transform = async (src, context = "/") => {
 
   await Promise.all(Object.keys(requires).map(async value => {
     if(isHttp(value)) {
+      if(!['.js', '.json'].includes(path.extname(value))) {
+        throw new Error('only support .js and .json')
+      }
       const data = (await axios.get(value)).data
-      requires[value] = await exports.transform(data, value)
+      if(typeof data === 'string') {
+        requires[value] = await exports.transform(data, value)
+      } else {
+        requires[value] = data
+      }
+      return
+    }
+    if (isNodeModule(value) && isWhitelistModule(value)) {
+      delete requires[value]
       return
     }
     if (isNodeModule(value) && isWhitelistModule(value)) {
@@ -45,21 +56,33 @@ exports.transform = async (src, context = "/") => {
       if(isNodeModule(value)) {
         throw new Error('Cannot use node_module in remote url')
       }
+      if(!['.js', '.json'].includes(path.extname(value))) {
+        throw new Error('only support .js and .json')
+      }
       const data = (await axios.get(url.resolve(context, value))).data
-      requires[value] = await exports.transform(data, url.resolve(context, value))
-      return
-    }
-    if(isNodeModule(value)) {
-      if(!isWhitelistModule(value)) {
-        const filePath = require.resolve(`${value}`) // to ignore webpack warning
-        const data = fs.readFileSync(filePath).toString()
-        requires[value] = await exports.transform(data, path.dirname(filePath))
+      if(typeof data === 'string') {
+        requires[value] = await exports.transform(data, url.resolve(context, value))
+      } else {
+        requires[value] = data
       }
       return
     }
-    const filePath = require.resolve(`${path.resolve(context, value)}`)
+
+    let filePath;
+    if(isNodeModule(value)) {
+      filePath = require.resolve(`${value}`) // to ignore webpack warning
+    } else {
+      filePath = require.resolve(`${path.resolve(context, value)}`)
+    }
+    if(!['.js', '.json'].includes(path.extname(filePath))) {
+      throw new Error('only support .js and .json')
+    }
     const data = fs.readFileSync(filePath).toString()
-    requires[value] = await exports.transform(data, path.dirname(filePath))
+    if(typeof data === 'string') {
+      requires[value] = await exports.transform(data, path.dirname(filePath))
+    } else {
+      requires[value] = data
+    }
   }))
 
   if(requires === {}) {
@@ -68,6 +91,9 @@ exports.transform = async (src, context = "/") => {
 
   // first, preprocess
   src = await babelify(src, [resolveExternal(requires)])
+  if(src.endsWith(';')) {
+    src = src.slice(0, -1) // for redundancy Semicolon
+  }
   return src
 }
 

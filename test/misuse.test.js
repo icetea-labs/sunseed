@@ -1,5 +1,5 @@
 const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const { babelify, transform } = require('../src/transform')
 
 test('2 contract decorators error', () => {
   let src = `
@@ -97,4 +97,12 @@ test('only one @onreceive per class', () => {
   expect(() => {
     src = babelify(src, [plugin])
   }).toThrow(SyntaxError);
+})
+
+test('only js and json, weak way', () => {
+  let src = `
+    const test = require('./misc/test.node')
+    @contract class A {}
+  `
+  expect(transform(src, __dirname)).rejects.toThrow(Error);
 })
