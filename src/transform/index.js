@@ -9,7 +9,7 @@ const resolveExternal = require('../external')
 const importToRequire = require('../import2require')
 const babelify = require('./babelify')
 
-exports.transform = async (src, context = "/") => {
+exports.transform = async (src, context = "/", project) => {
   src = await babelify(src, [importToRequire])
   const parsed = babelParser.parse(src, {
     sourceType: "module",
@@ -68,16 +68,31 @@ exports.transform = async (src, context = "/") => {
     if(isNodeModule(value)) {
       filePath = require.resolve(`${value}`) // to ignore webpack warning
     } else {
-      filePath = require.resolve(`${path.resolve(context, value)}`)
+      if (project) {
+        filePath = path.join(context, value)
+      } else {
+        filePath = require.resolve(`${path.resolve(context, value)}`)
+      }
     }
+
     if(!['.js', '.json'].includes(path.extname(filePath))) {
       throw new Error('only support .js and .json')
     }
-    const data = fs.readFileSync(filePath).toString()
-    if(typeof data === 'string') {
-      requires[value] = await exports.transform(data, path.dirname(filePath))
+    let data;
+    if (project) {
+      data = project.getFile(filePath).getData().toString()
     } else {
+      data = fs.readFileSync(filePath).toString()
+    }
+    try {
+      data = JSON.parse(data)
       requires[value] = data
+    } catch (err) {
+      if(err instanceof SyntaxError) {
+        requires[value] = await exports.transform(data, path.dirname(filePath), project)
+      } else {
+        throw err
+      }
     }
   }))
 

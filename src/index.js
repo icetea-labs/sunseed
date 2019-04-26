@@ -12,7 +12,9 @@ exports.transpile = async (src, {
   minifyOpts = {},
   prettier = false,
   prettierOpts = {},
-  context = "/" }) => {
+  context = "/",
+  project // for studio support file, to keep deadline, TODO: remove if possible
+}) => {
 
   // The decorated plugins should append this, but for now we add here to simplify
   // src += ';const __contract = new __contract_name();const __metadata = {}'
@@ -23,7 +25,7 @@ exports.transpile = async (src, {
   src = babelify(src, [flowPlugin])
 
   // don't know, maybe babel not support decorators along to private property
-  src = await transform(src, context)
+  src = await transform(src, context, project)
 
   // finally, wrap it
   src = makeWrapper(src).trim()

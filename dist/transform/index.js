@@ -37,6 +37,7 @@ function () {
   /*#__PURE__*/
   _regenerator["default"].mark(function _callee2(src) {
     var context,
+        project,
         parsed,
         requires,
         _args2 = arguments;
@@ -45,10 +46,11 @@ function () {
         switch (_context2.prev = _context2.next) {
           case 0:
             context = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : "/";
-            _context2.next = 3;
+            project = _args2.length > 2 ? _args2[2] : undefined;
+            _context2.next = 4;
             return babelify(src, [importToRequire]);
 
-          case 3:
+          case 4:
             src = _context2.sent;
             parsed = babelParser.parse(src, {
               sourceType: "module",
@@ -73,7 +75,7 @@ function () {
                 requires[value] = value;
               }
             });
-            _context2.next = 9;
+            _context2.next = 10;
             return Promise.all(Object.keys(requires).map(
             /*#__PURE__*/
             function () {
@@ -184,7 +186,11 @@ function () {
                         if (isNodeModule(value)) {
                           filePath = require.resolve("".concat(value)); // to ignore webpack warning
                         } else {
-                          filePath = require.resolve("".concat(path.resolve(context, value)));
+                          if (project) {
+                            filePath = path.join(context, value);
+                          } else {
+                            filePath = require.resolve("".concat(path.resolve(context, value)));
+                          }
                         }
 
                         if (['.js', '.json'].includes(path.extname(filePath))) {
@@ -195,30 +201,44 @@ function () {
                         throw new Error('only support .js and .json');
 
                       case 36:
-                        data = fs.readFileSync(filePath).toString();
+                        if (project) {
+                          data = project.getFile(filePath).getData().toString();
+                        } else {
+                          data = fs.readFileSync(filePath).toString();
+                        }
 
-                        if (!(typeof data === 'string')) {
-                          _context.next = 43;
+                        _context.prev = 37;
+                        data = JSON.parse(data);
+                        requires[value] = data;
+                        _context.next = 51;
+                        break;
+
+                      case 42:
+                        _context.prev = 42;
+                        _context.t0 = _context["catch"](37);
+
+                        if (!(_context.t0 instanceof SyntaxError)) {
+                          _context.next = 50;
                           break;
                         }
 
-                        _context.next = 40;
-                        return exports.transform(data, path.dirname(filePath));
+                        _context.next = 47;
+                        return exports.transform(data, path.dirname(filePath), project);
 
-                      case 40:
+                      case 47:
                         requires[value] = _context.sent;
-                        _context.next = 44;
+                        _context.next = 51;
                         break;
 
-                      case 43:
-                        requires[value] = data;
+                      case 50:
+                        throw _context.t0;
 
-                      case 44:
+                      case 51:
                       case "end":
                         return _context.stop();
                     }
                   }
-                }, _callee);
+                }, _callee, null, [[37, 42]]);
               }));
 
               return function (_x2) {
@@ -226,19 +246,19 @@ function () {
               };
             }()));
 
-          case 9:
+          case 10:
             if (!(requires === {})) {
-              _context2.next = 11;
+              _context2.next = 12;
               break;
             }
 
             return _context2.abrupt("return", src);
 
-          case 11:
-            _context2.next = 13;
+          case 12:
+            _context2.next = 14;
             return babelify(src, [resolveExternal(requires)]);
 
-          case 13:
+          case 14:
             src = _context2.sent;
 
             if (src.endsWith(';')) {
@@ -247,7 +267,7 @@ function () {
 
             return _context2.abrupt("return", src);
 
-          case 16:
+          case 17:
           case "end":
             return _context2.stop();
         }

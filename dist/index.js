@@ -30,13 +30,13 @@ function () {
   var _ref2 = (0, _asyncToGenerator2["default"])(
   /*#__PURE__*/
   _regenerator["default"].mark(function _callee(src, _ref) {
-    var _ref$minify, minify, _ref$minifyOpts, minifyOpts, _ref$prettier, prettier, _ref$prettierOpts, prettierOpts, _ref$context, context;
+    var _ref$minify, minify, _ref$minifyOpts, minifyOpts, _ref$prettier, prettier, _ref$prettierOpts, prettierOpts, _ref$context, context, project;
 
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _ref$minify = _ref.minify, minify = _ref$minify === void 0 ? false : _ref$minify, _ref$minifyOpts = _ref.minifyOpts, minifyOpts = _ref$minifyOpts === void 0 ? {} : _ref$minifyOpts, _ref$prettier = _ref.prettier, prettier = _ref$prettier === void 0 ? false : _ref$prettier, _ref$prettierOpts = _ref.prettierOpts, prettierOpts = _ref$prettierOpts === void 0 ? {} : _ref$prettierOpts, _ref$context = _ref.context, context = _ref$context === void 0 ? "/" : _ref$context;
+            _ref$minify = _ref.minify, minify = _ref$minify === void 0 ? false : _ref$minify, _ref$minifyOpts = _ref.minifyOpts, minifyOpts = _ref$minifyOpts === void 0 ? {} : _ref$minifyOpts, _ref$prettier = _ref.prettier, prettier = _ref$prettier === void 0 ? false : _ref$prettier, _ref$prettierOpts = _ref.prettierOpts, prettierOpts = _ref$prettierOpts === void 0 ? {} : _ref$prettierOpts, _ref$context = _ref.context, context = _ref$context === void 0 ? "/" : _ref$context, project = _ref.project;
             // The decorated plugins should append this, but for now we add here to simplify
             // src += ';const __contract = new __contract_name();const __metadata = {}'
             // then, babelify it
@@ -45,7 +45,7 @@ function () {
             src = babelify(src, [flowPlugin]); // don't know, maybe babel not support decorators along to private property
 
             _context.next = 5;
-            return transform(src, context);
+            return transform(src, context, project);
 
           case 5:
             src = _context.sent;
