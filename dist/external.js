@@ -47,9 +47,16 @@ function () {
       }
 
       var fn = template.expression("\n      (function () {\n        const module={exports:{}};\n        const exports=module.exports;\n        CODE\n        return module.exports\n      })()\n    ");
-      path.replaceWith(fn({
-        CODE: code
-      }));
+
+      if (value.endsWith('.js')) {
+        path.replaceWith(fn({
+          CODE: code
+        }));
+      }
+
+      if (value.endsWith('.json')) {
+        path.replaceWith(this.types.valueToNode(code));
+      }
     }
   }, {
     key: "buildError",

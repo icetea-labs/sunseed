@@ -48,10 +48,6 @@ exports.transform = async (src, context = "/") => {
       delete requires[value]
       return
     }
-    if (isNodeModule(value) && isWhitelistModule(value)) {
-      delete requires[value]
-      return
-    }
     if(isHttp(context)) {
       if(isNodeModule(value)) {
         throw new Error('Cannot use node_module in remote url')
