@@ -64,9 +64,16 @@ exports.transform = async (src, context = '/', project) => {
       return
     }
 
+    // if you want to use bundle instead of blockchain node_modules
+    const localFlag = '@local'
+    let moduleName = value
+    if (moduleName.endsWith(localFlag)) {
+      moduleName = moduleName.slice(0, -localFlag.length)
+    }
+
     let filePath
-    if (isNodeModule(value)) {
-      filePath = require.resolve(`${value}`) // to ignore webpack warning
+    if (isNodeModule(moduleName)) {
+      filePath = require.resolve(`${moduleName}`) // to ignore webpack warning
     } else {
       if (project) {
         filePath = path.join(context, value)

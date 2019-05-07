@@ -67,3 +67,28 @@ test('js remote', async () => {
   src = Terser.minify(src).code
   expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=(()=>"test"),t.exports}();class A{}const __contract=new A,__metadata={};')
 })
+
+test('whitelist require', async () => {
+  let src = `
+    const _ = require('lodash')
+    @contract class A {
+      @pure test() { return _.isEmpty([]) }
+    }
+  `
+  src = await transform(src)
+  src = babelify(src, [plugin])
+  src = Terser.minify(src).code
+  expect(src).toBe('const _=require("lodash");class A{test(){return _.isEmpty([])}}const __contract=new A,__metadata={test:{type:"ClassMethod",decorators:["pure"],returnType:"any",params:[]}};')
+})
+
+test('prefer local module', async () => {
+  let src = `
+    const moment = require('moment@local')
+    @contract class A {
+      @pure test() { return moment().format() }
+    }
+  `
+  await transform(src)
+  babelify(src, [plugin])
+  Terser.minify(src)
+})

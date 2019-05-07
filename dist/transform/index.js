@@ -82,7 +82,7 @@ function () {
               var _ref3 = (0, _asyncToGenerator2["default"])(
               /*#__PURE__*/
               _regenerator["default"].mark(function _callee(value) {
-                var _data, _data2, filePath, data;
+                var _data, _data2, localFlag, moduleName, filePath, data;
 
                 return _regenerator["default"].wrap(function _callee$(_context) {
                   while (1) {
@@ -183,8 +183,16 @@ function () {
                         return _context.abrupt("return");
 
                       case 33:
-                        if (isNodeModule(value)) {
-                          filePath = require.resolve("".concat(value)); // to ignore webpack warning
+                        // if you want to use bundle instead of blockchain node_modules
+                        localFlag = '@local';
+                        moduleName = value;
+
+                        if (moduleName.endsWith(localFlag)) {
+                          moduleName = moduleName.slice(0, -localFlag.length);
+                        }
+
+                        if (isNodeModule(moduleName)) {
+                          filePath = require.resolve("".concat(moduleName)); // to ignore webpack warning
                         } else {
                           if (project) {
                             filePath = path.join(context, value);
@@ -194,51 +202,51 @@ function () {
                         }
 
                         if (['.js', '.json'].includes(path.extname(filePath))) {
-                          _context.next = 36;
+                          _context.next = 39;
                           break;
                         }
 
                         throw new Error('only support .js and .json');
 
-                      case 36:
+                      case 39:
                         if (project) {
                           data = project.getFile(filePath).getData().toString();
                         } else {
                           data = fs.readFileSync(filePath).toString();
                         }
 
-                        _context.prev = 37;
+                        _context.prev = 40;
                         data = JSON.parse(data);
                         requires[value] = data;
-                        _context.next = 51;
+                        _context.next = 54;
                         break;
 
-                      case 42:
-                        _context.prev = 42;
-                        _context.t0 = _context["catch"](37);
+                      case 45:
+                        _context.prev = 45;
+                        _context.t0 = _context["catch"](40);
 
                         if (!(_context.t0 instanceof SyntaxError)) {
-                          _context.next = 50;
+                          _context.next = 53;
                           break;
                         }
 
-                        _context.next = 47;
+                        _context.next = 50;
                         return exports.transform(data, path.dirname(filePath), project);
 
-                      case 47:
+                      case 50:
                         requires[value] = _context.sent;
-                        _context.next = 51;
+                        _context.next = 54;
                         break;
 
-                      case 50:
+                      case 53:
                         throw _context.t0;
 
-                      case 51:
+                      case 54:
                       case "end":
                         return _context.stop();
                     }
                   }
-                }, _callee, null, [[37, 42]]);
+                }, _callee, null, [[40, 45]]);
               }));
 
               return function (_x2) {

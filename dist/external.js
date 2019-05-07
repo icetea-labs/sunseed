@@ -48,14 +48,12 @@ function () {
 
       var fn = template.expression("\n      (function () {\n        const module={exports:{}};\n        const exports=module.exports;\n        CODE\n        return module.exports\n      })()\n    ");
 
-      if (value.endsWith('.js')) {
+      if (value.endsWith('.json')) {
+        path.replaceWith(this.types.valueToNode(code));
+      } else {
         path.replaceWith(fn({
           CODE: code
         }));
-      }
-
-      if (value.endsWith('.json')) {
-        path.replaceWith(this.types.valueToNode(code));
       }
     }
   }, {
