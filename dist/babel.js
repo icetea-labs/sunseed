@@ -10,12 +10,12 @@ var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/cl
 
 var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var template = require("@babel/template");
+var template = require('@babel/template');
 
-var types = require("@babel/types");
+var types = require('@babel/types');
 
 var numberOfContracts = 0;
-var contractName = "";
+var contractName = '';
 var metadata = {};
 var extendData = {};
 
@@ -146,7 +146,7 @@ function () {
     (0, _classCallCheck2["default"])(this, IceTea);
     this.types = types;
     this.__on_deployed = 0;
-    this.className = "";
+    this.className = '';
     this.metadata = {};
   }
 
@@ -168,13 +168,13 @@ function () {
         extendData[this.className] = klass.superClass.name;
       }
 
-      var contracts = this.findDecorators(klass, "contract");
+      var contracts = this.findDecorators(klass, 'contract');
       numberOfContracts += contracts.length;
       var ctor = this.findConstructor(klass);
 
       if (ctor) {
-        ctor.kind = "method";
-        ctor.key.name = "__on_deployed";
+        ctor.kind = 'method';
+        ctor.key.name = '__on_deployed';
         this.replaceSuper(ctor);
       }
 
@@ -203,7 +203,7 @@ function () {
         throw this.buildError('Only @state, @pure for property', node);
       }
 
-      var states = this.findDecorators(node, "state");
+      var states = this.findDecorators(node, 'state');
       var name = node.key.name || '#' + node.key.id.name; // private property does not have key.name
 
       if (node.value && !this.isConstant(node.value) && !isMethod(node)) {
@@ -220,8 +220,8 @@ function () {
 
           onDeploy = klassPath.node.body.body[0];
           this.metadata['__on_deployed'] = {
-            type: "ClassMethod",
-            decorators: ["payable"]
+            type: 'ClassMethod',
+            decorators: ['payable']
           };
         }
 
@@ -346,11 +346,11 @@ function () {
     key: "exit",
     value: function exit(node) {
       if (numberOfContracts === 0) {
-        throw this.buildError("Your smart contract does not have @contract.", node);
+        throw this.buildError('Your smart contract does not have @contract.', node);
       }
 
       if (numberOfContracts > 1) {
-        throw this.buildError("Your smart contract has more than one @contract.", node);
+        throw this.buildError('Your smart contract has more than one @contract.', node);
       }
 
       var name = contractName;
@@ -370,7 +370,7 @@ function () {
     key: "reset",
     value: function reset() {
       numberOfContracts = 0;
-      contractName = "";
+      contractName = '';
       metadata = {};
       extendData = {};
     }
@@ -383,7 +383,7 @@ function () {
         }
 
         if (body.expression.callee.type === 'Super') {
-          var superTemplate = template.smart("\n\t\t\t\t  super.__on_deployed(ARGUMENTS)\n        ");
+          var superTemplate = template.smart("\n          super.__on_deployed(ARGUMENTS)\n        ");
           body = superTemplate({
             ARGUMENTS: body.expression.arguments
           });
@@ -423,7 +423,7 @@ function () {
     key: "findConstructor",
     value: function findConstructor(klass) {
       return klass.body.body.filter(function (body) {
-        return body.kind === "constructor";
+        return body.kind === 'constructor';
       })[0];
     }
   }, {
@@ -434,7 +434,7 @@ function () {
       }
 
       return klass.body.body.filter(function (body) {
-        return body.type === "ClassMethod" && names.includes(body.key.name);
+        return body.type === 'ClassMethod' && names.includes(body.key.name);
       })[0];
     }
   }, {

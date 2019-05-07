@@ -45,7 +45,7 @@ function () {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            context = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : "/";
+            context = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : '/';
             project = _args2.length > 2 ? _args2[2] : undefined;
             _context2.next = 4;
             return babelify(src, [importToRequire]);
@@ -53,7 +53,7 @@ function () {
           case 4:
             src = _context2.sent;
             parsed = babelParser.parse(src, {
-              sourceType: "module",
+              sourceType: 'module',
               plugins: plugins
             });
             requires = {};

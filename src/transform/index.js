@@ -9,21 +9,21 @@ const resolveExternal = require('../external')
 const importToRequire = require('../import2require')
 const babelify = require('./babelify')
 
-exports.transform = async (src, context = "/", project) => {
+exports.transform = async (src, context = '/', project) => {
   src = await babelify(src, [importToRequire])
   const parsed = babelParser.parse(src, {
-    sourceType: "module",
+    sourceType: 'module',
     plugins
   })
   let requires = {}
 
   traverse(parsed, {
     CallExpression: ({ node }) => {
-      if(!node || node.callee.name !== 'require') {
+      if (!node || node.callee.name !== 'require') {
         return
       }
       const arguments_ = node.arguments
-      if(arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
+      if (arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
         return
       }
       const value = arguments_[0].value
@@ -32,12 +32,12 @@ exports.transform = async (src, context = "/", project) => {
   })
 
   await Promise.all(Object.keys(requires).map(async value => {
-    if(isHttp(value)) {
-      if(!['.js', '.json'].includes(path.extname(value))) {
+    if (isHttp(value)) {
+      if (!['.js', '.json'].includes(path.extname(value))) {
         throw new Error('only support .js and .json')
       }
       const data = (await axios.get(value)).data
-      if(typeof data === 'string') {
+      if (typeof data === 'string') {
         requires[value] = await exports.transform(data, value)
       } else {
         requires[value] = data
@@ -48,15 +48,15 @@ exports.transform = async (src, context = "/", project) => {
       delete requires[value]
       return
     }
-    if(isHttp(context)) {
-      if(isNodeModule(value)) {
+    if (isHttp(context)) {
+      if (isNodeModule(value)) {
         throw new Error('Cannot use node_module in remote url')
       }
-      if(!['.js', '.json'].includes(path.extname(value))) {
+      if (!['.js', '.json'].includes(path.extname(value))) {
         throw new Error('only support .js and .json')
       }
       const data = (await axios.get(url.resolve(context, value))).data
-      if(typeof data === 'string') {
+      if (typeof data === 'string') {
         requires[value] = await exports.transform(data, url.resolve(context, value))
       } else {
         requires[value] = data
@@ -64,8 +64,8 @@ exports.transform = async (src, context = "/", project) => {
       return
     }
 
-    let filePath;
-    if(isNodeModule(value)) {
+    let filePath
+    if (isNodeModule(value)) {
       filePath = require.resolve(`${value}`) // to ignore webpack warning
     } else {
       if (project) {
@@ -75,10 +75,10 @@ exports.transform = async (src, context = "/", project) => {
       }
     }
 
-    if(!['.js', '.json'].includes(path.extname(filePath))) {
+    if (!['.js', '.json'].includes(path.extname(filePath))) {
       throw new Error('only support .js and .json')
     }
-    let data;
+    let data
     if (project) {
       data = project.getFile(filePath).getData().toString()
     } else {
@@ -88,7 +88,7 @@ exports.transform = async (src, context = "/", project) => {
       data = JSON.parse(data)
       requires[value] = data
     } catch (err) {
-      if(err instanceof SyntaxError) {
+      if (err instanceof SyntaxError) {
         requires[value] = await exports.transform(data, path.dirname(filePath), project)
       } else {
         throw err
@@ -96,13 +96,13 @@ exports.transform = async (src, context = "/", project) => {
     }
   }))
 
-  if(requires === {}) {
+  if (requires === {}) {
     return src
   }
 
   // first, preprocess
   src = await babelify(src, [resolveExternal(requires)])
-  if(src.endsWith(';')) {
+  if (src.endsWith(';')) {
     src = src.slice(0, -1) // for redundancy Semicolon
   }
   return src

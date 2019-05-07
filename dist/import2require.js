@@ -6,7 +6,7 @@ var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/cl
 
 var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var template = require("@babel/template");
+var template = require('@babel/template');
 
 var IceTea =
 /*#__PURE__*/
@@ -24,7 +24,7 @@ function () {
       var specifiers = node.specifiers;
       var lefts = [];
       var hasDefault = false;
-      var require1 = template.smart("\n\t\t  const LOCAL = SOURCE\n\t  ");
+      var require1 = template.smart("\n      const LOCAL = SOURCE\n    ");
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -33,7 +33,7 @@ function () {
         for (var _iterator = specifiers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
           var specifier = _step.value;
 
-          if (specifier.type === "ImportNamespaceSpecifier" || specifier.type === "ImportDefaultSpecifier") {
+          if (specifier.type === 'ImportNamespaceSpecifier' || specifier.type === 'ImportDefaultSpecifier') {
             klass.replaceWith(require1({
               LOCAL: specifier.local.name,
               SOURCE: source
@@ -42,7 +42,7 @@ function () {
             hasDefault = true;
           }
 
-          if (specifier.type === "ImportSpecifier") {
+          if (specifier.type === 'ImportSpecifier') {
             lefts.push([specifier.local.name, specifier.imported.name]);
           }
         }
@@ -62,10 +62,10 @@ function () {
       }
 
       if (lefts.length > 0) {
-        var tmp = "{" + lefts.map(function (left) {
+        var tmp = '{' + lefts.map(function (left) {
           return "".concat(left[1], ": ").concat(left[0]);
-        }).join(", ") + "}";
-        var require2 = template.smart("\n\t      const ".concat(tmp, " = SOURCE\n\t    "));
+        }).join(', ') + '}';
+        var require2 = template.smart("\n        const ".concat(tmp, " = SOURCE\n      "));
         klass.insertAfter(require2({
           SOURCE: source
         }));

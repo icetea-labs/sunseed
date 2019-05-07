@@ -8,11 +8,11 @@ var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"))
 
 var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
 
-var prettier = require("prettier/standalone");
+var prettier = require('prettier/standalone');
 
-var plugins = [require("prettier/parser-babylon")];
+var plugins = [require('prettier/parser-babylon')];
 
-var Terser = require("terser");
+var Terser = require('terser');
 
 var flowPlugin = require('@babel/plugin-transform-flow-strip-types');
 
@@ -36,7 +36,7 @@ function () {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _ref$minify = _ref.minify, minify = _ref$minify === void 0 ? false : _ref$minify, _ref$minifyOpts = _ref.minifyOpts, minifyOpts = _ref$minifyOpts === void 0 ? {} : _ref$minifyOpts, _ref$prettier = _ref.prettier, prettier = _ref$prettier === void 0 ? false : _ref$prettier, _ref$prettierOpts = _ref.prettierOpts, prettierOpts = _ref$prettierOpts === void 0 ? {} : _ref$prettierOpts, _ref$context = _ref.context, context = _ref$context === void 0 ? "/" : _ref$context, project = _ref.project;
+            _ref$minify = _ref.minify, minify = _ref$minify === void 0 ? false : _ref$minify, _ref$minifyOpts = _ref.minifyOpts, minifyOpts = _ref$minifyOpts === void 0 ? {} : _ref$minifyOpts, _ref$prettier = _ref.prettier, prettier = _ref$prettier === void 0 ? false : _ref$prettier, _ref$prettierOpts = _ref.prettierOpts, prettierOpts = _ref$prettierOpts === void 0 ? {} : _ref$prettierOpts, _ref$context = _ref.context, context = _ref$context === void 0 ? '/' : _ref$context, project = _ref.project;
             // The decorated plugins should append this, but for now we add here to simplify
             // src += ';const __contract = new __contract_name();const __metadata = {}'
             // then, babelify it
@@ -81,7 +81,7 @@ function () {
 function prettify(src) {
   var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   return prettier.format(src, {
-    parser: "babel",
+    parser: 'babel',
     plugins: plugins
   });
 }

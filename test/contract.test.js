@@ -1,4 +1,4 @@
-const Terser = require("terser")
+const Terser = require('terser')
 const plugin = require('../src/babel')
 const { babelify, transform } = require('../src/transform')
 
@@ -14,13 +14,13 @@ test('constructor to deploy', () => {
 })
 
 test('onreceive method', () => {
-  let src = `
+  const src = `
     @contract class A {
       @onreceive receive() {}
     }
   `
-  src = babelify(src, [plugin])
-  src = Terser.minify(src).code
+  babelify(src, [plugin])
+  Terser.minify(src)
   // expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:"ClassMethod",decorators:["view"],returnType:"any",params:[]}};')
 })
 
@@ -42,7 +42,7 @@ test('non constant', () => {
     }
   `
   src = babelify(src, [plugin])
-  const { error }  = Terser.minify(src)
+  const { error } = Terser.minify(src)
   expect(error.message).toBe('Unexpected token: operator (=)')
 })
 
@@ -67,4 +67,3 @@ test('js remote', async () => {
   src = Terser.minify(src).code
   expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=(()=>"test"),t.exports}();class A{}const __contract=new A,__metadata={};')
 })
-

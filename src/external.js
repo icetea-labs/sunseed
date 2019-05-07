@@ -1,26 +1,26 @@
-const template = require("@babel/template");
+const template = require('@babel/template')
 const { isNodeModule } = require('./common')
 
 class IceTea {
-  constructor(types, data) {
+  constructor (types, data) {
     this.types = types
     this.data = data
   }
 
-  run(path) {
+  run (path) {
     const node = path.node
-    if(!node || node.callee.name !== 'require') {
+    if (!node || node.callee.name !== 'require') {
       return
     }
     const arguments_ = node.arguments
-    if(arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
+    if (arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
       return
     }
     const value = arguments_[0].value
     const code = this.data[value]
 
-    if(!code) {
-      if(!isNodeModule(value)) {
+    if (!code) {
+      if (!isNodeModule(value)) {
         throw this.buildError('external source not found', node)
       }
       return
@@ -33,14 +33,14 @@ class IceTea {
         CODE
         return module.exports
       })()
-    `);
+    `)
 
-    if(value.endsWith('.js')) {
+    if (value.endsWith('.js')) {
       path.replaceWith(fn({
         CODE: code
       }))
     }
-    if(value.endsWith('.json')) {
+    if (value.endsWith('.json')) {
       path.replaceWith(this.types.valueToNode(code))
     }
   }
@@ -54,15 +54,15 @@ class IceTea {
 }
 
 module.exports = function (data) {
-  return function(babel) {
-    const { types: t } = babel;
-  
+  return function (babel) {
+    const { types: t } = babel
+
     return {
       visitor: {
         CallExpression: function (path) {
-          new IceTea(t, data).run(path);
+          new IceTea(t, data).run(path)
         }
       }
-    };
+    }
   }
 }

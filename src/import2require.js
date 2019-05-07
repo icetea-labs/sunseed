@@ -1,11 +1,11 @@
-const template = require("@babel/template");
+const template = require('@babel/template')
 
 class IceTea {
-  constructor(types) {
+  constructor (types) {
     this.types = types
   }
 
-  run(klass) {
+  run (klass) {
     const node = klass.node
     let source = `require('${node.source.value}')`
     const specifiers = node.specifiers
@@ -13,10 +13,10 @@ class IceTea {
     let hasDefault = false
 
     const require1 = template.smart(`
-		  const LOCAL = SOURCE
-	  `)
+      const LOCAL = SOURCE
+    `)
     for (let specifier of specifiers) {
-      if (specifier.type === "ImportNamespaceSpecifier" || specifier.type === "ImportDefaultSpecifier") {
+      if (specifier.type === 'ImportNamespaceSpecifier' || specifier.type === 'ImportDefaultSpecifier') {
         klass.replaceWith(
           require1({
             LOCAL: specifier.local.name,
@@ -26,15 +26,15 @@ class IceTea {
         source = specifier.local.name
         hasDefault = true
       }
-      if (specifier.type === "ImportSpecifier") {
+      if (specifier.type === 'ImportSpecifier') {
         lefts.push([specifier.local.name, specifier.imported.name])
       }
     }
     if (lefts.length > 0) {
-      let tmp = "{" + lefts.map(left => `${left[1]}: ${left[0]}`).join(", ") + "}"
+      let tmp = '{' + lefts.map(left => `${left[1]}: ${left[0]}`).join(', ') + '}'
       const require2 = template.smart(`
-	      const ${tmp} = SOURCE
-	    `)
+        const ${tmp} = SOURCE
+      `)
       klass.insertAfter(
         require2({
           SOURCE: source
@@ -47,14 +47,14 @@ class IceTea {
   }
 }
 
-module.exports = function(babel) {
-  const { types: t } = babel;
-  
+module.exports = function (babel) {
+  const { types: t } = babel
+
   return {
     visitor: {
       ImportDeclaration: function (node) {
-        new IceTea(t).run(node);
+        new IceTea(t).run(node)
       }
     }
-  };
+  }
 }

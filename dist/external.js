@@ -6,7 +6,7 @@ var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/cl
 
 var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
-var template = require("@babel/template");
+var template = require('@babel/template');
 
 var _require = require('./common'),
     isNodeModule = _require.isNodeModule;

@@ -8,8 +8,8 @@ test('2 contract decorators error', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
-});
+  }).toThrow(SyntaxError)
+})
 
 test('one __on_deployed', () => {
   let src = `
@@ -20,7 +20,7 @@ test('one __on_deployed', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('no __on_received', () => {
@@ -31,7 +31,7 @@ test('no __on_received', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('not use function with state', () => {
@@ -42,7 +42,7 @@ test('not use function with state', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('only state and pure in property', () => {
@@ -53,7 +53,7 @@ test('only state and pure in property', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('private method cannot payable', () => {
@@ -64,7 +64,7 @@ test('private method cannot payable', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('at lease one contract', () => {
@@ -73,7 +73,7 @@ test('at lease one contract', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('non-payable @onreceive function should have empty body', () => {
@@ -84,7 +84,7 @@ test('non-payable @onreceive function should have empty body', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('only one @onreceive per class', () => {
@@ -96,7 +96,7 @@ test('only one @onreceive per class', () => {
   `
   expect(() => {
     src = babelify(src, [plugin])
-  }).toThrow(SyntaxError);
+  }).toThrow(SyntaxError)
 })
 
 test('only js and json, weak way', () => {
@@ -104,5 +104,5 @@ test('only js and json, weak way', () => {
     const test = require('./misc/test.node')
     @contract class A {}
   `
-  expect(transform(src, __dirname)).rejects.toThrow(Error);
+  expect(transform(src, __dirname)).rejects.toThrow(Error)
 })

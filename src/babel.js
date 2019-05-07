@@ -1,7 +1,7 @@
-const template = require("@babel/template");
-const types = require("@babel/types");
+const template = require('@babel/template')
+const types = require('@babel/types')
 let numberOfContracts = 0
-let contractName = ""
+let contractName = ''
 let metadata = {}
 let extendData = {}
 
@@ -40,7 +40,7 @@ function concatUnique (a, b) {
 
   return result
 }
-  
+
 function getTypeName (node, insideUnion) {
   if (!node) return 'any'
   const ta = insideUnion ? node : node.typeAnnotation
@@ -97,23 +97,23 @@ function getTypeParams (params) {
     return param
   })
 }
-  
+
 // const SYSTEM_DECORATORS = ['state', 'onReceived', 'transaction', 'view', 'pure', 'payable']
 // const STATE_CHANGE_DECORATORS = ['transaction', 'view', 'pure', 'payable']
 const METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable']
 const PROPERTY_DECORATORS = ['state', 'pure']
 const SYSTEM_DECORATORS = ['onReceived', 'onreceive']
 // const SPECIAL_MEMBERS = ['constructor', '__on_deployed', '__on_received']
-  
+
 module.exports = function ({ types: t }) {
   return {
     visitor: {
-      ClassDeclaration: function(path) {
-        new IceTea(t).classDeclaration(path);
+      ClassDeclaration: function (path) {
+        new IceTea(t).classDeclaration(path)
       },
       Program: {
-        exit(path) {
-          new IceTea(t).exit(path.node);
+        exit (path) {
+          new IceTea(t).exit(path.node)
         }
       }
     }
@@ -121,64 +121,64 @@ module.exports = function ({ types: t }) {
 }
 
 class IceTea {
-  constructor(types) {
+  constructor (types) {
     this.types = types
     this.__on_deployed = 0
-    this.className = ""
+    this.className = ''
     this.metadata = {}
   }
 
-  classDeclaration(path) {
+  classDeclaration (path) {
     const klass = path.node
     this.className = klass.id.name
-    if(!metadata[this.className]) {
+    if (!metadata[this.className]) {
       metadata[this.className] = {}
     }
     this.metadata = metadata[this.className]
-    if(klass.superClass) {
+    if (klass.superClass) {
       extendData[this.className] = klass.superClass.name
     }
 
-    const contracts = this.findDecorators(klass, "contract");
-    numberOfContracts += contracts.length;
-    const ctor = this.findConstructor(klass);
-    if(ctor) {
-      ctor.kind = "method";
-      ctor.key.name = "__on_deployed";
+    const contracts = this.findDecorators(klass, 'contract')
+    numberOfContracts += contracts.length
+    const ctor = this.findConstructor(klass)
+    if (ctor) {
+      ctor.kind = 'method'
+      ctor.key.name = '__on_deployed'
       this.replaceSuper(ctor)
     }
 
-    if(contracts.length > 0) {
+    if (contracts.length > 0) {
       contractName = klass.id.name
       this.deleteDecorators(klass, contracts)
     }
-    
+
     path.get('body.body').map(body => {
-      if(['ClassProperty', 'ClassPrivateProperty'].includes(body.node.type)) {
+      if (['ClassProperty', 'ClassPrivateProperty'].includes(body.node.type)) {
         this.classProperty(body)
-      } else if(['ClassMethod', 'ClassPrivateMethod'].includes(body.node.type)) {
+      } else if (['ClassMethod', 'ClassPrivateMethod'].includes(body.node.type)) {
         this.classMethod(body.node)
       }
     })
   }
 
-  classProperty(path) {
+  classProperty (path) {
     const { node } = path
     const decorators = node.decorators || []
 
-    if(!decorators.every(decorator => {
+    if (!decorators.every(decorator => {
       return PROPERTY_DECORATORS.includes(decorator.expression.name)
     })) {
       throw this.buildError('Only @state, @pure for property', node)
     }
 
-    const states = this.findDecorators(node, "state");
-    const name = node.key.name || ( '#' + node.key.id.name) // private property does not have key.name
+    const states = this.findDecorators(node, 'state')
+    const name = node.key.name || ('#' + node.key.id.name) // private property does not have key.name
 
-    if(node.value && !this.isConstant(node.value) && !isMethod(node)) {
+    if (node.value && !this.isConstant(node.value) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
       let onDeploy = this.findMethod(klassPath.node, '__on_deployed')
-      if(!onDeploy) {
+      if (!onDeploy) {
         // class noname is only used for valid syntax
         const fn = template.smart(`
           class noname {
@@ -188,8 +188,8 @@ class IceTea {
         klassPath.node.body.body.unshift(...fn().body.body)
         onDeploy = klassPath.node.body.body[0]
         this.metadata['__on_deployed'] = {
-          type: "ClassMethod",
-          decorators: ["payable"]
+          type: 'ClassMethod',
+          decorators: ['payable']
         }
       }
       const fn = template.smart(`
@@ -201,19 +201,19 @@ class IceTea {
       }))
 
       // initialization is already added constructor
-      if(states.length === 0) {
+      if (states.length === 0) {
         path.remove()
       }
     }
 
-    if(states.length > 0) {
-      if(isMethod(node)) {
+    if (states.length > 0) {
+      if (isMethod(node)) {
         throw this.buildError('function cannot be decorated as @state', node)
       }
 
       this.wrapState(path)
 
-      if(!this.metadata[name]) {
+      if (!this.metadata[name]) {
         this.metadata[name] = {
           type: node.type,
           decorators: [...decorators.map(decorator => decorator.expression.name), 'view'],
@@ -223,67 +223,67 @@ class IceTea {
       return
     }
 
-    if(!this.metadata[name]) {
+    if (!this.metadata[name]) {
       this.metadata[name] = {
         type: node.type,
-        decorators: decorators.map(decorator => decorator.expression.name),
+        decorators: decorators.map(decorator => decorator.expression.name)
       }
 
-      if(!isMethod(node)) {
+      if (!isMethod(node)) {
         this.metadata[name]['fieldType'] = getTypeName(node.typeAnnotation)
-        if(decorators.length === 0) {
+        if (decorators.length === 0) {
           this.metadata[name]['decorators'].push('pure')
         }
       } else {
         this.metadata[name]['returnType'] = getTypeName(node.value.returnType)
         this.metadata[name]['params'] = getTypeParams(node.value.params)
-        if(decorators.length === 0) {
+        if (decorators.length === 0) {
           this.metadata[name]['decorators'].push('view')
         }
       }
     }
   }
 
-  classMethod(klass) {
-    const name = klass.key.name || ( '#' + klass.key.id.name)
-    if(name === '__on_received') {
+  classMethod (klass) {
+    const name = klass.key.name || ('#' + klass.key.id.name)
+    if (name === '__on_received') {
       throw this.buildError('__on_received cannot be specified directly.', klass)
     }
     if (name === '__on_deployed') {
-      if(this.__on_deployed > 0) {
+      if (this.__on_deployed > 0) {
         throw this.buildError('__on_deployed cannot be specified directly.', klass)
       }
       this.__on_deployed += 1
     }
-    if(name.startsWith('#')) {
+    if (name.startsWith('#')) {
       const payables = this.findDecorators(klass, 'payable')
-      if(payables.length > 0) {
+      if (payables.length > 0) {
         throw this.buildError('Private function cannot be payable', klass)
       }
     }
 
     const decorators = klass.decorators || []
-    if(!this.metadata[name]) {
+    if (!this.metadata[name]) {
       this.metadata[name] = {
         type: klass.type,
         decorators: decorators.map(decorator => decorator.expression.name),
         returnType: getTypeName(klass.returnType),
         params: getTypeParams(klass.params)
       }
-      if(!this.metadata[name].decorators.some(decorator => {
-        return METHOD_DECORATORS.includes(decorator);
+      if (!this.metadata[name].decorators.some(decorator => {
+        return METHOD_DECORATORS.includes(decorator)
       })) {
         this.metadata[name].decorators.push('view')
       }
     }
 
     const onreceives = this.findDecorators(klass, 'onReceived', 'onreceive')
-    if(onreceives.length > 0) {
+    if (onreceives.length > 0) {
       const payables = this.findDecorators(klass, 'payable')
-      if(payables.length === 0 && klass.body.body.length > 0) {
+      if (payables.length === 0 && klass.body.body.length > 0) {
         throw this.buildError('non-payable @onreceive function should have empty body.', klass)
       }
-      if(this.metadata['__on_received']) {
+      if (this.metadata['__on_received']) {
         throw this.buildError('only one @onreceive per class.', klass)
       }
       this.metadata['__on_received'] = klass.key.name
@@ -292,18 +292,18 @@ class IceTea {
     this.deleteDecorators(klass, this.findDecorators(klass, ...METHOD_DECORATORS, ...SYSTEM_DECORATORS))
   }
 
-  exit(node) {
-    if(numberOfContracts === 0) {
-      throw this.buildError("Your smart contract does not have @contract.", node)
+  exit (node) {
+    if (numberOfContracts === 0) {
+      throw this.buildError('Your smart contract does not have @contract.', node)
     }
     if (numberOfContracts > 1) {
-      throw this.buildError("Your smart contract has more than one @contract.", node)
+      throw this.buildError('Your smart contract has more than one @contract.', node)
     }
 
     let name = contractName
     let parent = extendData[name]
-    while(parent) {
-      metadata[contractName] = {...metadata[parent], ...metadata[contractName]}
+    while (parent) {
+      metadata[contractName] = { ...metadata[parent], ...metadata[contractName] }
       name = parent
       parent = extendData[name]
     }
@@ -313,22 +313,22 @@ class IceTea {
     this.reset()
   }
 
-  reset() {
-    numberOfContracts = 0;
-    contractName = ""
+  reset () {
+    numberOfContracts = 0
+    contractName = ''
     metadata = {}
     extendData = {}
   }
 
-  replaceSuper(ctor) {
+  replaceSuper (ctor) {
     ctor.body.body = ctor.body.body.map(body => {
-      if(!body.expression || body.expression.type !== 'CallExpression') {
+      if (!body.expression || body.expression.type !== 'CallExpression') {
         return body
       }
-      if(body.expression.callee.type === 'Super') {
+      if (body.expression.callee.type === 'Super') {
         const superTemplate = template.smart(`
-				  super.__on_deployed(ARGUMENTS)
-        `);
+          super.__on_deployed(ARGUMENTS)
+        `)
         body = superTemplate({
           ARGUMENTS: body.expression.arguments
         })
@@ -337,9 +337,9 @@ class IceTea {
     })
   }
 
-  wrapState(path) {
+  wrapState (path) {
     const { node } = path
-    const name = node.key.name || ( '#' + node.key.id.name)
+    const name = node.key.name || ('#' + node.key.id.name)
     const wrap = template.smart(`
       class noname {
         get NAME() {
@@ -349,14 +349,14 @@ class IceTea {
           this.setState("NAME", value);
         }
       }
-    `);
+    `)
     path.replaceWithMultiple(wrap({
       NAME: name,
       DEFAULT: node.value
     }).body.body)
   }
 
-  appendNewCommand(node) {
+  appendNewCommand (node) {
     const append = template.smart(`
       const __contract = new NAME();
     `)
@@ -365,7 +365,7 @@ class IceTea {
     }))
   }
 
-  appendMetadata(node) {
+  appendMetadata (node) {
     const meta = template.smart(`
       const __metadata = META
     `)
@@ -374,55 +374,55 @@ class IceTea {
     }))
   }
 
-  findConstructor(klass) {
+  findConstructor (klass) {
     return klass.body.body.filter(body => {
-      return body.kind === "constructor";
-    })[0];
+      return body.kind === 'constructor'
+    })[0]
   }
 
-  findMethod(klass, ...names) {
+  findMethod (klass, ...names) {
     return klass.body.body.filter(body => {
-      return body.type === "ClassMethod" && names.includes(body.key.name);
-    })[0];
+      return body.type === 'ClassMethod' && names.includes(body.key.name)
+    })[0]
   }
 
-  buildError(message, nodePath) {
+  buildError (message, nodePath) {
     this.reset()
     if (nodePath && nodePath.buildCodeFrameError) {
-      return nodePath.buildCodeFrameError(message);
+      return nodePath.buildCodeFrameError(message)
     }
-    return new SyntaxError(message);
+    return new SyntaxError(message)
   }
 
-  findDecorators(klass, ...names) {
+  findDecorators (klass, ...names) {
     return (klass.decorators || []).filter(decorator => {
-      return names.includes(decorator.expression.name);
-    });
+      return names.includes(decorator.expression.name)
+    })
   }
 
-  deleteDecorators(klass, decorators) {
+  deleteDecorators (klass, decorators) {
     decorators.forEach(decorator => {
-      const index = klass.decorators.indexOf(decorator);
+      const index = klass.decorators.indexOf(decorator)
       if (index >= 0) {
-        klass.decorators.splice(index, 1);
+        klass.decorators.splice(index, 1)
       }
-    });
+    })
   }
 
-  isConstant(value) {
+  isConstant (value) {
     const { types } = this
-    if(types.isLiteral(value) && value.type !== 'TemplateLiteral') {
+    if (types.isLiteral(value) && value.type !== 'TemplateLiteral') {
       return true
     }
-    if(value.type === 'ArrayExpression') {
+    if (value.type === 'ArrayExpression') {
       return value.elements && value.elements.every(element => {
         return this.isConstant(element)
       })
     }
-    if(value.type === 'BinaryExpression') {
+    if (value.type === 'BinaryExpression') {
       return value.left && value.right && this.isConstant(value.left) && this.isConstant(value.right)
     }
-    if(value.type === 'ObjectExpression') {
+    if (value.type === 'ObjectExpression') {
       return value.properties && value.properties.every(property => {
         return property.key.type !== 'TemplateLiteral' && this.isConstant(property.value)
       })
