@@ -115,13 +115,10 @@ function getTypeParams(params) {
 
     return param;
   });
-} // const SYSTEM_DECORATORS = ['state', 'onReceived', 'transaction', 'view', 'pure', 'payable']
-// const STATE_CHANGE_DECORATORS = ['transaction', 'view', 'pure', 'payable']
+}
 
-
-var METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable'];
-var PROPERTY_DECORATORS = ['state', 'pure'];
-var SYSTEM_DECORATORS = ['onReceived', 'onreceive']; // const SPECIAL_MEMBERS = ['constructor', '__on_deployed', '__on_received']
+var METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable', 'internal', 'onreceive'];
+var PROPERTY_DECORATORS = ['state', 'pure', 'internal'];
 
 module.exports = function (_ref) {
   var t = _ref.types;
@@ -148,6 +145,7 @@ function () {
     this.__on_deployed = 0;
     this.className = '';
     this.metadata = {};
+    this.klass = undefined;
   }
 
   (0, _createClass2["default"])(IceTea, [{
@@ -157,6 +155,7 @@ function () {
 
       var klass = path.node;
       this.className = klass.id.name;
+      this.klass = klass;
 
       if (!metadata[this.className]) {
         metadata[this.className] = {};
@@ -200,11 +199,27 @@ function () {
       if (!decorators.every(function (decorator) {
         return PROPERTY_DECORATORS.includes(decorator.expression.name);
       })) {
-        throw this.buildError('Only @state, @pure for property', node);
+        var allowDecorators = PROPERTY_DECORATORS.map(function (method) {
+          return "@".concat(method);
+        });
+        throw this.buildError("Only ".concat(allowDecorators.join(', '), " is allowed by property"), node);
       }
 
       var states = this.findDecorators(node, 'state');
+      var internals = this.findDecorators(node, 'internal');
       var name = node.key.name || '#' + node.key.id.name; // private property does not have key.name
+
+      if (internals.length > 0) {
+        if (name.startsWith('#')) {
+          throw this.buildError('Private property cannot be internal', node);
+        }
+
+        if (decorators.some(function (decorator) {
+          return ['transaction', 'view', 'pure', 'onreceive'].includes(decorator.expression.name);
+        })) {
+          throw this.buildError('transaction, view, pure or onreceive property cannot be internal', node);
+        }
+      }
 
       if (node.value && !this.isConstant(node.value) && !isMethod(node)) {
         var klassPath = path.parentPath.parentPath;
@@ -241,6 +256,12 @@ function () {
           throw this.buildError('function cannot be decorated as @state', node);
         }
 
+        var indents = this.findMethodDefinition(this.klass, name);
+
+        if (indents.length > 0) {
+          throw this.buildError("".concat(name, " is declared as getter or setter"), node);
+        }
+
         this.wrapState(path);
 
         if (!this.metadata[name]) {
@@ -249,6 +270,7 @@ function () {
             decorators: [].concat((0, _toConsumableArray2["default"])(decorators.map(function (decorator) {
               return decorator.expression.name;
             })), ['view']),
+            // auto add view on state
             fieldType: getTypeName(node.typeAnnotation)
           };
         }
@@ -268,21 +290,45 @@ function () {
           this.metadata[name]['fieldType'] = getTypeName(node.typeAnnotation);
 
           if (decorators.length === 0) {
-            this.metadata[name]['decorators'].push('pure');
+            if (name.startsWith('#')) {
+              // private property
+              this.metadata[name]['decorators'].push('pure');
+            } else {
+              this.metadata[name]['decorators'].push('internal');
+            }
           }
         } else {
           this.metadata[name]['returnType'] = getTypeName(node.value.returnType);
           this.metadata[name]['params'] = getTypeParams(node.value.params);
 
           if (decorators.length === 0) {
-            this.metadata[name]['decorators'].push('view');
+            if (name.startsWith('#')) {
+              // private function
+              this.metadata[name]['decorators'].push('view');
+            } else {
+              this.metadata[name]['decorators'].push('internal');
+            }
           }
         }
-      }
+      } // delete propery decorator
+
+
+      this.deleteDecorators(node, this.findDecorators.apply(this, [node].concat(PROPERTY_DECORATORS)));
     }
   }, {
     key: "classMethod",
     value: function classMethod(klass) {
+      var decorators = klass.decorators || [];
+
+      if (!decorators.every(function (decorator) {
+        return METHOD_DECORATORS.includes(decorator.expression.name);
+      })) {
+        var allowDecorators = METHOD_DECORATORS.map(function (method) {
+          return "@".concat(method);
+        });
+        throw this.buildError("Only ".concat(allowDecorators.join(', '), " is allowed by method"), klass);
+      }
+
       var name = klass.key.name || '#' + klass.key.id.name;
 
       if (name === '__on_received') {
@@ -303,9 +349,13 @@ function () {
         if (payables.length > 0) {
           throw this.buildError('Private function cannot be payable', klass);
         }
-      }
 
-      var decorators = klass.decorators || [];
+        var internals = this.findDecorators(klass, 'internal');
+
+        if (internals.length > 0) {
+          throw this.buildError('Private function cannot be internal', klass);
+        }
+      }
 
       if (!this.metadata[name]) {
         this.metadata[name] = {
@@ -317,14 +367,17 @@ function () {
           params: getTypeParams(klass.params)
         };
 
-        if (!this.metadata[name].decorators.some(function (decorator) {
-          return METHOD_DECORATORS.includes(decorator);
-        })) {
-          this.metadata[name].decorators.push('view');
+        if (decorators.length === 0) {
+          if (name.startsWith('#') || name === '__on_deployed') {
+            // private method
+            this.metadata[name].decorators.push('view');
+          } else {
+            this.metadata[name].decorators.push('internal');
+          }
         }
       }
 
-      var onreceives = this.findDecorators(klass, 'onReceived', 'onreceive');
+      var onreceives = this.findDecorators(klass, 'onreceive');
 
       if (onreceives.length > 0) {
         var _payables = this.findDecorators(klass, 'payable');
@@ -340,7 +393,7 @@ function () {
         this.metadata['__on_received'] = klass.key.name;
       }
 
-      this.deleteDecorators(klass, this.findDecorators.apply(this, [klass].concat(METHOD_DECORATORS, SYSTEM_DECORATORS)));
+      this.deleteDecorators(klass, this.findDecorators.apply(this, [klass].concat(METHOD_DECORATORS)));
     }
   }, {
     key: "exit",
@@ -425,6 +478,13 @@ function () {
       return klass.body.body.filter(function (body) {
         return body.kind === 'constructor';
       })[0];
+    }
+  }, {
+    key: "findMethodDefinition",
+    value: function findMethodDefinition(klass, name) {
+      return klass.body.body.filter(function (body) {
+        return ['MethodDefinition', 'ClassMethod'].includes(body.type) && body.key.name === name && ['get', 'set'].includes(body.kind);
+      });
     }
   }, {
     key: "findMethod",

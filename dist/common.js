@@ -18,10 +18,32 @@ exports.isNodeModule = function (value) {
   return validForNewPackages || validForOldPackages;
 };
 
-var whiteListModules = ['lodash', 'moment', 'bn.js', '@hapi/joi', 'validator', 'cheerio', '@icetea/botutils', '@icetea/polyfill', 'assert', 'buffer', 'console', 'constants', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util'];
+var whiteListModules = ['lodash', 'moment', 'big.js', '@hapi/joi', 'validator', 'cheerio', '@icetea/botutils', '@icetea/polyfill', 'assert', 'buffer', 'console', 'constants', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util'];
 
 exports.isWhitelistModule = function (value) {
   return whiteListModules.some(function (element) {
     return value === element || value.startsWith("".concat(element, "/"));
+  });
+};
+
+exports.getWhiteListModules = function () {
+  return whiteListModules;
+};
+
+exports.setWhiteListModules = function (modules) {
+  whiteListModules = modules;
+};
+
+exports.addWhiteListModule = function (module) {
+  if (whiteListModules.includes(module)) {
+    return;
+  }
+
+  whiteListModules.push(module);
+};
+
+exports.removeWhiteListModule = function (module) {
+  whiteListModules = whiteListModules.filter(function (whitelist) {
+    return whitelist !== module;
   });
 };

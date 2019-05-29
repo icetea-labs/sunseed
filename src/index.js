@@ -6,15 +6,18 @@ const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
 const plugin = require('./babel')
 const makeWrapper = require('./wrapper')
 const { transform, babelify } = require('./transform')
+const { getWhiteListModules, setWhiteListModules, addWhiteListModule, removeWhiteListModule } = require('./common')
 
-exports.transpile = async (src, {
-  minify = false,
-  minifyOpts = {},
-  prettier = false,
-  prettierOpts = {},
-  context = '/',
-  project // for studio support file, to keep deadline, TODO: remove if possible
-}) => {
+const transpile = async (src, options = {}) => {
+  const {
+    minify = false,
+    minifyOpts = {},
+    prettier = false,
+    prettierOpts = {},
+    context = '/',
+    project // for studio support file, to keep deadline, TODO: remove if possible
+  } = options
+
   // The decorated plugins should append this, but for now we add here to simplify
   // src += ';const __contract = new __contract_name();const __metadata = {}'
   // then, babelify it
@@ -61,3 +64,5 @@ function doMinify (src, opts = {}) {
   }
   return result.code
 }
+
+module.exports = { transpile, addWhiteListModule, removeWhiteListModule, getWhiteListModules, setWhiteListModules }

@@ -6,7 +6,7 @@
   "browser": "dist/index.js",
   "scripts": {
     "build": "babel src --out-dir dist",
-    "test": "jest",
+    "test": "jest --coverage",
     "lint": "standard",
     "fix": "standard --fix"
   },
@@ -57,5 +57,11 @@
     "hooks": {
       "pre-commit": "npm run build"
     }
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "<rootDir>/src/**/*",
+      "!<rootDir>/node_modules/"
+    ]
   }
 }

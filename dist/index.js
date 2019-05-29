@@ -24,30 +24,49 @@ var _require = require('./transform'),
     transform = _require.transform,
     babelify = _require.babelify;
 
-exports.transpile =
+var _require2 = require('./common'),
+    getWhiteListModules = _require2.getWhiteListModules,
+    setWhiteListModules = _require2.setWhiteListModules,
+    addWhiteListModule = _require2.addWhiteListModule,
+    removeWhiteListModule = _require2.removeWhiteListModule;
+
+var transpile =
 /*#__PURE__*/
 function () {
-  var _ref2 = (0, _asyncToGenerator2["default"])(
+  var _ref = (0, _asyncToGenerator2["default"])(
   /*#__PURE__*/
-  _regenerator["default"].mark(function _callee(src, _ref) {
-    var _ref$minify, minify, _ref$minifyOpts, minifyOpts, _ref$prettier, prettier, _ref$prettierOpts, prettierOpts, _ref$context, context, project;
+  _regenerator["default"].mark(function _callee(src) {
+    var options,
+        _options$minify,
+        minify,
+        _options$minifyOpts,
+        minifyOpts,
+        _options$prettier,
+        prettier,
+        _options$prettierOpts,
+        prettierOpts,
+        _options$context,
+        context,
+        project,
+        _args = arguments;
 
     return _regenerator["default"].wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _ref$minify = _ref.minify, minify = _ref$minify === void 0 ? false : _ref$minify, _ref$minifyOpts = _ref.minifyOpts, minifyOpts = _ref$minifyOpts === void 0 ? {} : _ref$minifyOpts, _ref$prettier = _ref.prettier, prettier = _ref$prettier === void 0 ? false : _ref$prettier, _ref$prettierOpts = _ref.prettierOpts, prettierOpts = _ref$prettierOpts === void 0 ? {} : _ref$prettierOpts, _ref$context = _ref.context, context = _ref$context === void 0 ? '/' : _ref$context, project = _ref.project;
-            // The decorated plugins should append this, but for now we add here to simplify
+            options = _args.length > 1 && _args[1] !== undefined ? _args[1] : {};
+            _options$minify = options.minify, minify = _options$minify === void 0 ? false : _options$minify, _options$minifyOpts = options.minifyOpts, minifyOpts = _options$minifyOpts === void 0 ? {} : _options$minifyOpts, _options$prettier = options.prettier, prettier = _options$prettier === void 0 ? false : _options$prettier, _options$prettierOpts = options.prettierOpts, prettierOpts = _options$prettierOpts === void 0 ? {} : _options$prettierOpts, _options$context = options.context, context = _options$context === void 0 ? '/' : _options$context, project = options.project; // The decorated plugins should append this, but for now we add here to simplify
             // src += ';const __contract = new __contract_name();const __metadata = {}'
             // then, babelify it
+
             src = babelify(src, [plugin]); // remove flow types
 
             src = babelify(src, [flowPlugin]); // don't know, maybe babel not support decorators along to private property
 
-            _context.next = 5;
+            _context.next = 6;
             return transform(src, context, project);
 
-          case 5:
+          case 6:
             src = _context.sent;
             // finally, wrap it
             src = makeWrapper(src).trim(); // preparation for minified
@@ -65,7 +84,7 @@ function () {
 
             return _context.abrupt("return", src);
 
-          case 10:
+          case 11:
           case "end":
             return _context.stop();
         }
@@ -73,8 +92,8 @@ function () {
     }, _callee);
   }));
 
-  return function (_x, _x2) {
-    return _ref2.apply(this, arguments);
+  return function transpile(_x) {
+    return _ref.apply(this, arguments);
   };
 }();
 
@@ -102,3 +121,11 @@ function doMinify(src) {
 
   return result.code;
 }
+
+module.exports = {
+  transpile: transpile,
+  addWhiteListModule: addWhiteListModule,
+  removeWhiteListModule: removeWhiteListModule,
+  getWhiteListModules: getWhiteListModules,
+  setWhiteListModules: setWhiteListModules
+};

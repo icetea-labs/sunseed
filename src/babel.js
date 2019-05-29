@@ -98,12 +98,8 @@ function getTypeParams (params) {
   })
 }
 
-// const SYSTEM_DECORATORS = ['state', 'onReceived', 'transaction', 'view', 'pure', 'payable']
-// const STATE_CHANGE_DECORATORS = ['transaction', 'view', 'pure', 'payable']
-const METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable']
-const PROPERTY_DECORATORS = ['state', 'pure']
-const SYSTEM_DECORATORS = ['onReceived', 'onreceive']
-// const SPECIAL_MEMBERS = ['constructor', '__on_deployed', '__on_received']
+const METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable', 'internal', 'onreceive']
+const PROPERTY_DECORATORS = ['state', 'pure', 'internal']
 
 module.exports = function ({ types: t }) {
   return {
@@ -126,11 +122,13 @@ class IceTea {
     this.__on_deployed = 0
     this.className = ''
     this.metadata = {}
+    this.klass = undefined
   }
 
   classDeclaration (path) {
     const klass = path.node
     this.className = klass.id.name
+    this.klass = klass
     if (!metadata[this.className]) {
       metadata[this.className] = {}
     }
@@ -169,11 +167,24 @@ class IceTea {
     if (!decorators.every(decorator => {
       return PROPERTY_DECORATORS.includes(decorator.expression.name)
     })) {
-      throw this.buildError('Only @state, @pure for property', node)
+      const allowDecorators = PROPERTY_DECORATORS.map(method => `@${method}`)
+      throw this.buildError(`Only ${allowDecorators.join(', ')} is allowed by property`, node)
     }
 
     const states = this.findDecorators(node, 'state')
+    const internals = this.findDecorators(node, 'internal')
     const name = node.key.name || ('#' + node.key.id.name) // private property does not have key.name
+
+    if (internals.length > 0) {
+      if (name.startsWith('#')) {
+        throw this.buildError('Private property cannot be internal', node)
+      }
+      if (decorators.some(decorator => {
+        return ['transaction', 'view', 'pure', 'onreceive'].includes(decorator.expression.name)
+      })) {
+        throw this.buildError('transaction, view, pure or onreceive property cannot be internal', node)
+      }
+    }
 
     if (node.value && !this.isConstant(node.value) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
@@ -211,12 +222,17 @@ class IceTea {
         throw this.buildError('function cannot be decorated as @state', node)
       }
 
+      const indents = this.findMethodDefinition(this.klass, name)
+      if (indents.length > 0) {
+        throw this.buildError(`${name} is declared as getter or setter`, node)
+      }
+
       this.wrapState(path)
 
       if (!this.metadata[name]) {
         this.metadata[name] = {
           type: node.type,
-          decorators: [...decorators.map(decorator => decorator.expression.name), 'view'],
+          decorators: [...decorators.map(decorator => decorator.expression.name), 'view'], // auto add view on state
           fieldType: getTypeName(node.typeAnnotation)
         }
       }
@@ -232,19 +248,39 @@ class IceTea {
       if (!isMethod(node)) {
         this.metadata[name]['fieldType'] = getTypeName(node.typeAnnotation)
         if (decorators.length === 0) {
-          this.metadata[name]['decorators'].push('pure')
+          if (name.startsWith('#')) { // private property
+            this.metadata[name]['decorators'].push('pure')
+          } else {
+            this.metadata[name]['decorators'].push('internal')
+          }
         }
       } else {
         this.metadata[name]['returnType'] = getTypeName(node.value.returnType)
         this.metadata[name]['params'] = getTypeParams(node.value.params)
         if (decorators.length === 0) {
-          this.metadata[name]['decorators'].push('view')
+          if (name.startsWith('#')) { // private function
+            this.metadata[name]['decorators'].push('view')
+          } else {
+            this.metadata[name]['decorators'].push('internal')
+          }
         }
       }
     }
+
+    // delete propery decorator
+    this.deleteDecorators(node, this.findDecorators(node, ...PROPERTY_DECORATORS))
   }
 
   classMethod (klass) {
+    const decorators = klass.decorators || []
+
+    if (!decorators.every(decorator => {
+      return METHOD_DECORATORS.includes(decorator.expression.name)
+    })) {
+      const allowDecorators = METHOD_DECORATORS.map(method => `@${method}`)
+      throw this.buildError(`Only ${allowDecorators.join(', ')} is allowed by method`, klass)
+    }
+
     const name = klass.key.name || ('#' + klass.key.id.name)
     if (name === '__on_received') {
       throw this.buildError('__on_received cannot be specified directly.', klass)
@@ -260,9 +296,12 @@ class IceTea {
       if (payables.length > 0) {
         throw this.buildError('Private function cannot be payable', klass)
       }
+      const internals = this.findDecorators(klass, 'internal')
+      if (internals.length > 0) {
+        throw this.buildError('Private function cannot be internal', klass)
+      }
     }
 
-    const decorators = klass.decorators || []
     if (!this.metadata[name]) {
       this.metadata[name] = {
         type: klass.type,
@@ -270,14 +309,16 @@ class IceTea {
         returnType: getTypeName(klass.returnType),
         params: getTypeParams(klass.params)
       }
-      if (!this.metadata[name].decorators.some(decorator => {
-        return METHOD_DECORATORS.includes(decorator)
-      })) {
-        this.metadata[name].decorators.push('view')
+      if (decorators.length === 0) {
+        if (name.startsWith('#') || name === '__on_deployed') { // private method
+          this.metadata[name].decorators.push('view')
+        } else {
+          this.metadata[name].decorators.push('internal')
+        }
       }
     }
 
-    const onreceives = this.findDecorators(klass, 'onReceived', 'onreceive')
+    const onreceives = this.findDecorators(klass, 'onreceive')
     if (onreceives.length > 0) {
       const payables = this.findDecorators(klass, 'payable')
       if (payables.length === 0 && klass.body.body.length > 0) {
@@ -289,7 +330,7 @@ class IceTea {
       this.metadata['__on_received'] = klass.key.name
     }
 
-    this.deleteDecorators(klass, this.findDecorators(klass, ...METHOD_DECORATORS, ...SYSTEM_DECORATORS))
+    this.deleteDecorators(klass, this.findDecorators(klass, ...METHOD_DECORATORS))
   }
 
   exit (node) {
@@ -378,6 +419,14 @@ class IceTea {
     return klass.body.body.filter(body => {
       return body.kind === 'constructor'
     })[0]
+  }
+
+  findMethodDefinition (klass, name) {
+    return klass.body.body.filter(body => {
+      return ['MethodDefinition', 'ClassMethod'].includes(body.type) &&
+        body.key.name === name &&
+        ['get', 'set'].includes(body.kind)
+    })
   }
 
   findMethod (klass, ...names) {

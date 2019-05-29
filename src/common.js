@@ -35,8 +35,8 @@ exports.isNodeModule = (value) => {
   return validForNewPackages || validForOldPackages
 }
 
-const whiteListModules = [
-  'lodash', 'moment', 'bn.js', '@hapi/joi', 'validator', 'cheerio', '@icetea/botutils', '@icetea/polyfill',
+let whiteListModules = [
+  'lodash', 'moment', 'big.js', '@hapi/joi', 'validator', 'cheerio', '@icetea/botutils', '@icetea/polyfill',
   'assert', 'buffer', 'console', 'constants', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util'
 ]
 
@@ -44,4 +44,23 @@ exports.isWhitelistModule = (value) => {
   return whiteListModules.some(element => {
     return value === element || value.startsWith(`${element}/`)
   })
+}
+
+exports.getWhiteListModules = () => {
+  return whiteListModules
+}
+
+exports.setWhiteListModules = (modules) => {
+  whiteListModules = modules
+}
+
+exports.addWhiteListModule = (module) => {
+  if (whiteListModules.includes(module)) {
+    return
+  }
+  whiteListModules.push(module)
+}
+
+exports.removeWhiteListModule = (module) => {
+  whiteListModules = whiteListModules.filter(whitelist => (whitelist !== module))
 }

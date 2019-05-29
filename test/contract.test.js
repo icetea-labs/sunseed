@@ -14,14 +14,28 @@ test('constructor to deploy', () => {
 })
 
 test('onreceive method', () => {
-  const src = `
+  let src = `
     @contract class A {
       @onreceive receive() {}
     }
   `
-  babelify(src, [plugin])
-  Terser.minify(src)
-  // expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:"ClassMethod",decorators:["view"],returnType:"any",params:[]}};')
+  src = babelify(src, [plugin])
+  expect(src).toBe(`class A {
+  receive() {}
+
+}
+
+const __contract = new A();
+
+const __metadata = {
+  receive: {
+    type: "ClassMethod",
+    decorators: ["onreceive"],
+    returnType: "any",
+    params: []
+  },
+  __on_received: "receive"
+};`)
 })
 
 test('state', () => {
@@ -42,8 +56,57 @@ test('non constant', () => {
     }
   `
   src = babelify(src, [plugin])
-  const { error } = Terser.minify(src)
-  expect(error.message).toBe('Unexpected token: operator (=)')
+  expect(src).toBe(`class A {
+  property = () => {};
+}
+
+const __contract = new A();
+
+const __metadata = {
+  property: {
+    type: "ClassProperty",
+    decorators: ["internal"],
+    returnType: "any",
+    params: []
+  }
+};`)
+})
+
+test('non constant state init', () => {
+  let src = `
+    @contract class A {
+      @state property = Math.PI
+    }
+  `
+  src = babelify(src, [plugin])
+  expect(src).toBe(`class A {
+  __on_deployed() {
+    this.property = Math.PI;
+  }
+
+  get property() {
+    return this.getState("property", Math.PI);
+  }
+
+  set property(value) {
+    this.setState("property", value);
+  }
+
+}
+
+const __contract = new A();
+
+const __metadata = {
+  __on_deployed: {
+    type: "ClassMethod",
+    decorators: ["payable"]
+  },
+  property: {
+    type: "ClassProperty",
+    decorators: ["state", "view"],
+    fieldType: "any"
+  }
+};`)
 })
 
 test('json remote', async () => {
@@ -91,4 +154,60 @@ test('prefer local module', async () => {
   await transform(src)
   babelify(src, [plugin])
   Terser.minify(src)
+})
+
+test('inherit contract', async () => {
+  let src = `
+    class A {
+      constructor() { console.log('A') }
+      @state state: number 
+    }
+    @contract class B extends A {
+      constructor() {
+        super()
+        console.log('B')
+      }
+    }
+  `
+
+  src = babelify(src, [plugin])
+  expect(src).toBe(`class A {
+  __on_deployed() {
+    console.log('A');
+  }
+
+  get state() {
+    return this.getState("state");
+  }
+
+  set state(value) {
+    this.setState("state", value);
+  }
+
+}
+
+class B extends A {
+  __on_deployed() {
+    super.__on_deployed();
+
+    console.log('B');
+  }
+
+}
+
+const __contract = new B();
+
+const __metadata = {
+  __on_deployed: {
+    type: "ClassMethod",
+    decorators: ["view"],
+    returnType: "any",
+    params: []
+  },
+  state: {
+    type: "ClassProperty",
+    decorators: ["state", "view"],
+    fieldType: ["number"]
+  }
+};`)
 })

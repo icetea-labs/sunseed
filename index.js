@@ -1,3 +1,3 @@
-const { transpile } = require('./src')
+const sunseed = require('./src')
 
-module.exports = { transpile }
+module.exports = sunseed

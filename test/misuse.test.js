@@ -34,10 +34,21 @@ test('no __on_received', () => {
   }).toThrow(SyntaxError)
 })
 
-test('not use function with state', () => {
+test('not use class function with state', () => {
   let src = `
     @contract class A {
-      @state func = () => {}
+      @state func () {}
+    }
+  `
+  expect(() => {
+    src = babelify(src, [plugin])
+  }).toThrow(SyntaxError)
+})
+
+test('not use private class function with state', () => {
+  let src = `
+    @contract class A {
+      @state #func () {}
     }
   `
   expect(() => {
