@@ -37,12 +37,12 @@ const __contract = new Typed();
 const __metadata = {
   state: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: ["number"]
   },
   "#state": {
     type: "ClassPrivateProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: ["number"]
   },
   test: {

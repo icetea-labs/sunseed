@@ -118,7 +118,7 @@ function getTypeParams(params) {
 }
 
 var METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable', 'internal', 'onreceive'];
-var PROPERTY_DECORATORS = ['state', 'pure', 'internal'];
+var PROPERTY_DECORATORS = ['state', 'pure', 'internal', 'view'];
 
 module.exports = function (_ref) {
   var t = _ref.types;
@@ -262,15 +262,26 @@ function () {
           throw this.buildError("".concat(name, " is declared as getter or setter"), node);
         }
 
+        var pures = this.findDecorators(node, 'pure');
+
+        if (pures.length > 0) {
+          throw this.buildError("".concat(name, " is declared as state, cannot be pure"), node);
+        }
+
         this.wrapState(path);
 
         if (!this.metadata[name]) {
+          var decoratorNames = decorators.map(function (decorator) {
+            return decorator.expression.name;
+          });
+
+          if (decoratorNames.length === 1 && decoratorNames[0] === 'state') {
+            decoratorNames.push('internal');
+          }
+
           this.metadata[name] = {
             type: node.type,
-            decorators: [].concat((0, _toConsumableArray2["default"])(decorators.map(function (decorator) {
-              return decorator.expression.name;
-            })), ['view']),
-            // auto add view on state
+            decorators: decoratorNames,
             fieldType: getTypeName(node.typeAnnotation)
           };
         }

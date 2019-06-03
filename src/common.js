@@ -36,8 +36,8 @@ exports.isNodeModule = (value) => {
 }
 
 let whiteListModules = [
-  'lodash', 'moment', 'big.js', '@hapi/joi', 'validator', 'cheerio', '@icetea/botutils', '@icetea/polyfill',
-  'assert', 'buffer', 'console', 'constants', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util'
+  'lodash', 'moment', 'big.js', '@hapi/joi', 'validator', 'ajv', 'cheerio', '@icetea/polytils', 'icetea-botutils',
+  'assert', 'buffer', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util'
 ]
 
 exports.isWhitelistModule = (value) => {

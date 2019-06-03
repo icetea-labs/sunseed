@@ -46,7 +46,7 @@ test('state', () => {
   `
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('class A{get property(){return this.getState("property")}set property(t){this.setState("property",t)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","view"],fieldType:"any"}};')
+  expect(src).toBe('class A{get property(){return this.getState("property")}set property(t){this.setState("property",t)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
 })
 
 test('non constant', () => {
@@ -103,7 +103,7 @@ const __metadata = {
   },
   property: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: "any"
   }
 };`)
@@ -206,7 +206,7 @@ const __metadata = {
   },
   state: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: ["number"]
   }
 };`)

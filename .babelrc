@@ -1,7 +1,11 @@
 {
-  "presets": ["@babel/preset-env"],
+  "presets": [
+    "@babel/preset-env"
+  ],
   "plugins": [
-    ["@babel/transform-runtime"]
+    [
+      "@babel/transform-runtime"
+    ]
   ],
   "parserOpts": {
     "allowReturnOutsideFunction": true

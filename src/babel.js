@@ -99,7 +99,7 @@ function getTypeParams (params) {
 }
 
 const METHOD_DECORATORS = ['transaction', 'view', 'pure', 'payable', 'internal', 'onreceive']
-const PROPERTY_DECORATORS = ['state', 'pure', 'internal']
+const PROPERTY_DECORATORS = ['state', 'pure', 'internal', 'view']
 
 module.exports = function ({ types: t }) {
   return {
@@ -227,12 +227,21 @@ class IceTea {
         throw this.buildError(`${name} is declared as getter or setter`, node)
       }
 
+      const pures = this.findDecorators(node, 'pure')
+      if (pures.length > 0) {
+        throw this.buildError(`${name} is declared as state, cannot be pure`, node)
+      }
+
       this.wrapState(path)
 
       if (!this.metadata[name]) {
+        const decoratorNames = decorators.map(decorator => decorator.expression.name)
+        if (decoratorNames.length === 1 && decoratorNames[0] === 'state') {
+          decoratorNames.push('internal')
+        }
         this.metadata[name] = {
           type: node.type,
-          decorators: [...decorators.map(decorator => decorator.expression.name), 'view'], // auto add view on state
+          decorators: decoratorNames,
           fieldType: getTypeName(node.typeAnnotation)
         }
       }

@@ -148,22 +148,22 @@ const __contract = new A();
 const __metadata = {
   numberState: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: "any"
   },
   arrayState: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: "any"
   },
   sumState: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: "any"
   },
   objState: {
     type: "ClassProperty",
-    decorators: ["state", "view"],
+    decorators: ["state", "internal"],
     fieldType: "any"
   }
 };`)
