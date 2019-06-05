@@ -1,7 +1,7 @@
 {
-  "name": "sunseed",
-  "version": "1.0.0",
-  "description": "Compile djs to raw js",
+  "name": "@iceteachain/sunseed",
+  "version": "0.1.0",
+  "description": "Compile djs to raw js for deploying on Icetea Blockchain.",
   "main": "index.js",
   "browser": "dist/index.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "type": "git",
     "url": "git+ssh://git@github.com/TradaTech/sunseed.git"
   },
-  "author": "Trada Tech",
+  "author": "Trada Tech <iceteachain@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/TradaTech/sunseed/issues"
@@ -28,10 +28,10 @@
     "@babel/template": "7.4.0",
     "@babel/traverse": "7.4.3",
     "@babel/types": "7.4.0",
-    "axios": "0.18.0",
-    "node-fetch": "2.3.0",
-    "prettier": "1.16.4",
-    "terser": "3.17.0",
+    "axios": "0.19.0",
+    "node-fetch": "2.6.0",
+    "prettier": "1.17.1",
+    "terser": "4.0.0",
     "validate-npm-package-name": "3.0.0"
   },
   "devDependencies": {
@@ -39,7 +39,7 @@
     "@babel/node": "7.2.2",
     "@babel/plugin-transform-runtime": "7.4.3",
     "@babel/preset-env": "7.4.3",
-    "husky": "^2.2.0",
+    "husky": "^2.3.0",
     "jest": "24.7.1",
     "moment": "^2.24.0",
     "standard": "^12.0.1"

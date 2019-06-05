@@ -1,14 +1,10 @@
 module.exports = src => `
 'use strict';
-const revert = text => {throw new Error(text || "Transaction reverted.")};
-const expect = (condition, text) => {if (!condition) revert(text)}
-const assert = expect;
-
 const {msg, block, balanceOf, loadContract} = this.runtime
-const now = block ? block.timestamp : 0;
 
-assert(typeof msg !== "undefined" && msg, "Invalid or corrupt transaction data.");
-expect(msg.name, "Method name not specified.");
+if (!msg.name) {
+  throw new Error("Method name is required.")
+}
 
 ${src}
 
@@ -19,10 +15,12 @@ ${src}
     // call event methods but contract does not have one
     return;
   }
-  expect(["__metadata", "address", "balance", "deployedBy"].includes(__name) || 
-    (__name in __contract && !__name.startsWith('#')), "Method " + __name + " is private or does not exist.");
+  if (!["__metadata", "address", "balance", "deployedBy"].includes(__name) && 
+    (!(__name in __contract) || __name.startsWith('#'))) {
+      throw new Error("Method " + __name + " is private or does not exist.");
+  }
   if (__metadata[__name] && __metadata[__name].decorators && __metadata[__name].decorators.includes('internal')) {
-    revert("Method " + msg.name + " is internal.")
+    throw new Error("Method " + msg.name + " is internal.")
   }
   Object.defineProperties(__contract, Object.getOwnPropertyDescriptors(this));
   const __c = {
@@ -42,7 +40,7 @@ ${src}
           valueType = Object.prototype.toString.call(value).split(' ')[1].slice(0, -1).toLowerCase()
           if (types.includes(valueType)) return value;
         }
-        revert("Error executing '" + __name + "': wrong " + info + " type. Expect: " + 
+        throw new Error("Error executing '" + __name + "': wrong " + info + " type. Expect: " + 
         types.join(" | ") + ". Got: " + valueType + ".");
       }
     }
@@ -61,7 +59,7 @@ ${src}
       return __metadata[__name].decorators.includes(d);
     }
     if (!isValidCallType(msg.callType)) {
-      revert("Method " + __name + " is not decorated as @" + msg.callType + " and cannot be invoked in such mode");
+      throw new Error("Method " + __name + " is not decorated as @" + msg.callType + " and cannot be invoked in such mode");
     }
       // Check input param type
     const params = msg.params;

@@ -18,7 +18,7 @@ exports.isNodeModule = function (value) {
   return validForNewPackages || validForOldPackages;
 };
 
-var whiteListModules = ['lodash', 'moment', 'big.js', '@hapi/joi', 'validator', 'ajv', 'cheerio', '@icetea/polytils', 'icetea-botutils', 'assert', 'buffer', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util'];
+var whiteListModules = ['lodash', 'moment', 'big.js', '@hapi/joi', 'validator', 'ajv', 'cheerio', '@iceteachain/utils', 'u', 'assert', 'buffer', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util', 'create-hash'];
 
 exports.isWhitelistModule = function (value) {
   return whiteListModules.some(function (element) {
