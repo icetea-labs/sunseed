@@ -168,7 +168,7 @@ class IceTea {
       return PROPERTY_DECORATORS.includes(decorator.expression.name)
     })) {
       const allowDecorators = PROPERTY_DECORATORS.map(method => `@${method}`)
-      throw this.buildError(`Only ${allowDecorators.join(', ')} is allowed by property`, node)
+      throw this.buildError(`Only ${allowDecorators.join(', ')} are valid for a class field.`, node)
     }
 
     const states = this.findDecorators(node, 'state')
@@ -177,12 +177,12 @@ class IceTea {
 
     if (internals.length > 0) {
       if (name.startsWith('#')) {
-        throw this.buildError('Private property cannot be internal', node)
+        throw this.buildError('Private field cannot be @internal.', node)
       }
       if (decorators.some(decorator => {
         return ['transaction', 'view', 'pure', 'onreceive'].includes(decorator.expression.name)
       })) {
-        throw this.buildError('transaction, view, pure or onreceive property cannot be internal', node)
+        throw this.buildError('A @transaction, @view, @pure or @onreceive field cannot be @internal.', node)
       }
     }
 
@@ -219,17 +219,17 @@ class IceTea {
 
     if (states.length > 0) {
       if (isMethod(node)) {
-        throw this.buildError('function cannot be decorated as @state', node)
+        throw this.buildError('Function cannot be marked as @state.', node)
       }
 
       const indents = this.findMethodDefinition(this.klass, name)
       if (indents.length > 0) {
-        throw this.buildError(`${name} is declared as getter or setter`, node)
+        throw this.buildError(`${name} is already marked @state and cannot have getter or setter.`, node)
       }
 
       const pures = this.findDecorators(node, 'pure')
       if (pures.length > 0) {
-        throw this.buildError(`${name} is declared as state, cannot be pure`, node)
+        throw this.buildError(`${name} cannot be marked with both @state and @pure.`, node)
       }
 
       this.wrapState(path)
@@ -303,11 +303,11 @@ class IceTea {
     if (name.startsWith('#')) {
       const payables = this.findDecorators(klass, 'payable')
       if (payables.length > 0) {
-        throw this.buildError('Private function cannot be payable', klass)
+        throw this.buildError('Private function cannot be @payable.', klass)
       }
       const internals = this.findDecorators(klass, 'internal')
       if (internals.length > 0) {
-        throw this.buildError('Private function cannot be internal', klass)
+        throw this.buildError('Private function cannot be @internal.', klass)
       }
     }
 
@@ -331,10 +331,10 @@ class IceTea {
     if (onreceives.length > 0) {
       const payables = this.findDecorators(klass, 'payable')
       if (payables.length === 0 && klass.body.body.length > 0) {
-        throw this.buildError('non-payable @onreceive function should have empty body.', klass)
+        throw this.buildError('Non-payable @onreceive function should have empty body.', klass)
       }
       if (this.metadata['__on_received']) {
-        throw this.buildError('only one @onreceive per class.', klass)
+        throw this.buildError('Only one @onreceive is allowed per class.', klass)
       }
       this.metadata['__on_received'] = klass.key.name
     }
@@ -344,10 +344,10 @@ class IceTea {
 
   exit (node) {
     if (numberOfContracts === 0) {
-      throw this.buildError('Your smart contract does not have @contract.', node)
+      throw this.buildError('Your smart contract does not have a @contract class.', node)
     }
     if (numberOfContracts > 1) {
-      throw this.buildError('Your smart contract has more than one @contract.', node)
+      throw this.buildError('Your smart contract has more than one @contract classes.', node)
     }
 
     let name = contractName

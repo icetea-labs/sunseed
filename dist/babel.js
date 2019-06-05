@@ -202,7 +202,7 @@ function () {
         var allowDecorators = PROPERTY_DECORATORS.map(function (method) {
           return "@".concat(method);
         });
-        throw this.buildError("Only ".concat(allowDecorators.join(', '), " is allowed by property"), node);
+        throw this.buildError("Only ".concat(allowDecorators.join(', '), " are valid for a class field."), node);
       }
 
       var states = this.findDecorators(node, 'state');
@@ -211,13 +211,13 @@ function () {
 
       if (internals.length > 0) {
         if (name.startsWith('#')) {
-          throw this.buildError('Private property cannot be internal', node);
+          throw this.buildError('Private field cannot be @internal.', node);
         }
 
         if (decorators.some(function (decorator) {
           return ['transaction', 'view', 'pure', 'onreceive'].includes(decorator.expression.name);
         })) {
-          throw this.buildError('transaction, view, pure or onreceive property cannot be internal', node);
+          throw this.buildError('A @transaction, @view, @pure or @onreceive field cannot be @internal.', node);
         }
       }
 
@@ -253,19 +253,19 @@ function () {
 
       if (states.length > 0) {
         if (isMethod(node)) {
-          throw this.buildError('function cannot be decorated as @state', node);
+          throw this.buildError('Function cannot be marked as @state.', node);
         }
 
         var indents = this.findMethodDefinition(this.klass, name);
 
         if (indents.length > 0) {
-          throw this.buildError("".concat(name, " is declared as getter or setter"), node);
+          throw this.buildError("".concat(name, " is already marked @state and cannot have getter or setter."), node);
         }
 
         var pures = this.findDecorators(node, 'pure');
 
         if (pures.length > 0) {
-          throw this.buildError("".concat(name, " is declared as state, cannot be pure"), node);
+          throw this.buildError("".concat(name, " cannot be marked with both @state and @pure."), node);
         }
 
         this.wrapState(path);
@@ -358,13 +358,13 @@ function () {
         var payables = this.findDecorators(klass, 'payable');
 
         if (payables.length > 0) {
-          throw this.buildError('Private function cannot be payable', klass);
+          throw this.buildError('Private function cannot be @payable.', klass);
         }
 
         var internals = this.findDecorators(klass, 'internal');
 
         if (internals.length > 0) {
-          throw this.buildError('Private function cannot be internal', klass);
+          throw this.buildError('Private function cannot be @internal.', klass);
         }
       }
 
@@ -394,11 +394,11 @@ function () {
         var _payables = this.findDecorators(klass, 'payable');
 
         if (_payables.length === 0 && klass.body.body.length > 0) {
-          throw this.buildError('non-payable @onreceive function should have empty body.', klass);
+          throw this.buildError('Non-payable @onreceive function should have empty body.', klass);
         }
 
         if (this.metadata['__on_received']) {
-          throw this.buildError('only one @onreceive per class.', klass);
+          throw this.buildError('Only one @onreceive is allowed per class.', klass);
         }
 
         this.metadata['__on_received'] = klass.key.name;
@@ -410,11 +410,11 @@ function () {
     key: "exit",
     value: function exit(node) {
       if (numberOfContracts === 0) {
-        throw this.buildError('Your smart contract does not have @contract.', node);
+        throw this.buildError('Your smart contract does not have a @contract class.', node);
       }
 
       if (numberOfContracts > 1) {
-        throw this.buildError('Your smart contract has more than one @contract.', node);
+        throw this.buildError('Your smart contract has more than one @contract classes.', node);
       }
 
       var name = contractName;
