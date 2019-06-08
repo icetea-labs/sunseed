@@ -9,18 +9,18 @@ var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/creat
 var template = require('@babel/template');
 
 var _require = require('./common'),
-    isNodeModule = _require.isNodeModule;
+    isWhitelistModule = _require.isWhitelistModule;
 
-var IceTea =
+var Icetea =
 /*#__PURE__*/
 function () {
-  function IceTea(types, data) {
-    (0, _classCallCheck2["default"])(this, IceTea);
+  function Icetea(types, data) {
+    (0, _classCallCheck2["default"])(this, Icetea);
     this.types = types;
     this.data = data;
   }
 
-  (0, _createClass2["default"])(IceTea, [{
+  (0, _createClass2["default"])(Icetea, [{
     key: "run",
     value: function run(path) {
       var node = path.node;
@@ -31,7 +31,7 @@ function () {
 
       var arguments_ = node.arguments;
 
-      if (arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
+      if (!arguments_.length || arguments_[0].type !== 'StringLiteral') {
         return;
       }
 
@@ -39,18 +39,17 @@ function () {
       var code = this.data[value];
 
       if (!code) {
-        if (!isNodeModule(value)) {
-          throw this.buildError('external source not found', node);
+        if (!isWhitelistModule(value)) {
+          throw this.buildError('External source not found for non-whitelist moduel: ' + value, node);
         }
 
         return;
       }
 
-      var fn = template.expression("\n      (function () {\n        const module={exports:{}};\n        const exports=module.exports;\n        CODE\n        return module.exports\n      })()\n    ");
-
       if (value.endsWith('.json')) {
         path.replaceWith(this.types.valueToNode(code));
       } else {
+        var fn = template.expression("(function () {\n        const module={exports:{}}\n        const exports=module.exports;\n        CODE\n        ;return module.exports\n      })()");
         path.replaceWith(fn({
           CODE: code
         }));
@@ -66,7 +65,7 @@ function () {
       throw new SyntaxError(message);
     }
   }]);
-  return IceTea;
+  return Icetea;
 }();
 
 module.exports = function (data) {
@@ -75,7 +74,7 @@ module.exports = function (data) {
     return {
       visitor: {
         CallExpression: function CallExpression(path) {
-          new IceTea(t, data).run(path);
+          new Icetea(t, data).run(path);
         }
       }
     };
