@@ -32,9 +32,13 @@ exports.transform = async (src, context = '/', project) => {
   })
 
   await Promise.all(Object.keys(requires).map(async value => {
+    if (isWhitelistModule(value)) {
+      delete requires[value]
+      return
+    }
     if (isHttp(value)) {
       if (!['.js', '.json'].includes(path.extname(value))) {
-        throw new Error('only support .js and .json')
+        throw new Error('"require" supports only .js and .json files.')
       }
       const data = (await axios.get(value)).data
       if (typeof data === 'string') {
@@ -44,16 +48,12 @@ exports.transform = async (src, context = '/', project) => {
       }
       return
     }
-    if (isNodeModule(value) && isWhitelistModule(value)) {
-      delete requires[value]
-      return
-    }
     if (isHttp(context)) {
       if (isNodeModule(value)) {
-        throw new Error('Cannot use node_module in remote url')
+        throw new Error('Cannot use node_modules in remote URL.')
       }
       if (!['.js', '.json'].includes(path.extname(value))) {
-        throw new Error('only support .js and .json')
+        throw new Error('"require" supports only .js and .json files.')
       }
       const data = (await axios.get(url.resolve(context, value))).data
       if (typeof data === 'string') {
@@ -83,7 +83,7 @@ exports.transform = async (src, context = '/', project) => {
     }
 
     if (!['.js', '.json'].includes(path.extname(filePath))) {
-      throw new Error('only support .js and .json')
+      throw new Error('"require" supports only .js and .json files.')
     }
     let data
     if (project) {

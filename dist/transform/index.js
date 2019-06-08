@@ -88,51 +88,51 @@ function () {
                   while (1) {
                     switch (_context.prev = _context.next) {
                       case 0:
-                        if (!isHttp(value)) {
-                          _context.next = 14;
-                          break;
-                        }
-
-                        if (['.js', '.json'].includes(path.extname(value))) {
+                        if (!isWhitelistModule(value)) {
                           _context.next = 3;
                           break;
                         }
 
-                        throw new Error('only support .js and .json');
-
-                      case 3:
-                        _context.next = 5;
-                        return axios.get(value);
-
-                      case 5:
-                        _data = _context.sent.data;
-
-                        if (!(typeof _data === 'string')) {
-                          _context.next = 12;
-                          break;
-                        }
-
-                        _context.next = 9;
-                        return exports.transform(_data, value);
-
-                      case 9:
-                        requires[value] = _context.sent;
-                        _context.next = 13;
-                        break;
-
-                      case 12:
-                        requires[value] = _data;
-
-                      case 13:
+                        delete requires[value];
                         return _context.abrupt("return");
 
-                      case 14:
-                        if (!(isNodeModule(value) && isWhitelistModule(value))) {
+                      case 3:
+                        if (!isHttp(value)) {
                           _context.next = 17;
                           break;
                         }
 
-                        delete requires[value];
+                        if (['.js', '.json'].includes(path.extname(value))) {
+                          _context.next = 6;
+                          break;
+                        }
+
+                        throw new Error('"require" supports only .js and .json files.');
+
+                      case 6:
+                        _context.next = 8;
+                        return axios.get(value);
+
+                      case 8:
+                        _data = _context.sent.data;
+
+                        if (!(typeof _data === 'string')) {
+                          _context.next = 15;
+                          break;
+                        }
+
+                        _context.next = 12;
+                        return exports.transform(_data, value);
+
+                      case 12:
+                        requires[value] = _context.sent;
+                        _context.next = 16;
+                        break;
+
+                      case 15:
+                        requires[value] = _data;
+
+                      case 16:
                         return _context.abrupt("return");
 
                       case 17:
@@ -146,7 +146,7 @@ function () {
                           break;
                         }
 
-                        throw new Error('Cannot use node_module in remote url');
+                        throw new Error('Cannot use node_modules in remote URL.');
 
                       case 20:
                         if (['.js', '.json'].includes(path.extname(value))) {
@@ -154,7 +154,7 @@ function () {
                           break;
                         }
 
-                        throw new Error('only support .js and .json');
+                        throw new Error('"require" supports only .js and .json files.');
 
                       case 22:
                         _context.next = 24;
@@ -206,7 +206,7 @@ function () {
                           break;
                         }
 
-                        throw new Error('only support .js and .json');
+                        throw new Error('"require" supports only .js and .json files.');
 
                       case 39:
                         if (project) {
