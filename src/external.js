@@ -1,7 +1,7 @@
 const template = require('@babel/template')
-const { isNodeModule } = require('./common')
+const { isWhitelistModule } = require('./common')
 
-class IceTea {
+class Icetea {
   constructor (types, data) {
     this.types = types
     this.data = data
@@ -13,31 +13,28 @@ class IceTea {
       return
     }
     const arguments_ = node.arguments
-    if (arguments_.length !== 1 || arguments_[0].type !== 'StringLiteral') {
+    if (!arguments_.length || arguments_[0].type !== 'StringLiteral') {
       return
     }
     const value = arguments_[0].value
     const code = this.data[value]
 
     if (!code) {
-      if (!isNodeModule(value)) {
-        throw this.buildError('external source not found', node)
+      if (!isWhitelistModule(value)) {
+        throw this.buildError('External source not found for non-whitelist moduel: ' + value, node)
       }
       return
     }
 
-    const fn = template.expression(`
-      (function () {
-        const module={exports:{}};
-        const exports=module.exports;
-        CODE
-        return module.exports
-      })()
-    `)
-
     if (value.endsWith('.json')) {
       path.replaceWith(this.types.valueToNode(code))
     } else {
+      const fn = template.expression(`(function () {
+        const module={exports:{}}
+        const exports=module.exports;
+        CODE
+        ;return module.exports
+      })()`)
       path.replaceWith(fn({
         CODE: code
       }))
@@ -59,7 +56,7 @@ module.exports = function (data) {
     return {
       visitor: {
         CallExpression: function (path) {
-          new IceTea(t, data).run(path)
+          new Icetea(t, data).run(path)
         }
       }
     }

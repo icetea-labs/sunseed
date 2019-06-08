@@ -144,6 +144,19 @@ test('whitelist require', async () => {
   expect(src).toBe('const _=require("lodash");class A{test(){return _.isEmpty([])}}const __contract=new A,__metadata={test:{type:"ClassMethod",decorators:["pure"],returnType:"any",params:[]}};')
 })
 
+test('whitelist special', async () => {
+  let src = `
+    const _ = require(';')
+    @contract class A {
+      @pure test() { return _.isEmpty([]) }
+    }
+  `
+  src = await transform(src)
+  src = babelify(src, [plugin])
+  src = Terser.minify(src).code
+  expect(src).toBe('const _=require(";");class A{test(){return _.isEmpty([])}}const __contract=new A,__metadata={test:{type:"ClassMethod",decorators:["pure"],returnType:"any",params:[]}};')
+})
+
 test('prefer local module', async () => {
   let src = `
     const moment = require('moment@local')
