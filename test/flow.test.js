@@ -1,3 +1,4 @@
+const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
 const plugin = require('../src/babel')
 const { babelify } = require('../src/transform')
 
@@ -57,6 +58,49 @@ const __metadata = {
       name: "arg2",
       type: ["string"],
       defaultValue: null
+    }]
+  }
+};`)
+})
+
+test('address state', () => {
+  let src = `
+    @contract class AddressTest {
+      @state who: address
+
+      @transaction withdraw(who: address) { }
+    }
+  `
+  src = babelify(src, [plugin])
+  src = babelify(src, [flowPlugin])
+  expect(src).toBe(`class AddressTest {
+  get who() {
+    return this.getState("who");
+  }
+
+  set who(value) {
+    this.setState("who", value);
+  }
+
+  withdraw(who) {}
+
+}
+
+const __contract = new AddressTest();
+
+const __metadata = {
+  who: {
+    type: "ClassProperty",
+    decorators: ["state", "internal"],
+    fieldType: ["address"]
+  },
+  withdraw: {
+    type: "ClassMethod",
+    decorators: ["transaction"],
+    returnType: "any",
+    params: [{
+      name: "who",
+      type: ["address"]
     }]
   }
 };`)
