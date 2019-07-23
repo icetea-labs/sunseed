@@ -1,6 +1,6 @@
 module.exports = src => `
 'use strict';
-const {msg, block, balanceOf, loadContract} = this.runtime
+const {msg, block, balanceOf, loadContract, isValidAddress} = this.runtime
 
 if (!msg.name) {
   throw new Error("Method name is required.")
@@ -40,6 +40,13 @@ ${src}
           valueType = Object.prototype.toString.call(value).split(' ')[1].slice(0, -1).toLowerCase()
           if (types.includes(valueType)) return value;
         }
+
+        if(valueType === 'string') {
+          if(isValidAddress(value) && types.includes('address')) {
+            return true;
+          }
+        }
+
         throw new Error("Error executing '" + __name + "': wrong " + info + " type. Expect: " + 
         types.join(" | ") + ". Got: " + valueType + ".");
       }
