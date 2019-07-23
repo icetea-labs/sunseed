@@ -41,8 +41,8 @@ ${src}
           if (types.includes(valueType)) return value;
         }
 
-        if(valueType === 'string') {
-          if(isValidAddress(value) && types.includes('address')) {
+        if(valueType === 'string' && types.includes('address')) {
+          if(isValidAddress(value)) {
             return true;
           }
         }
