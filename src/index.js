@@ -15,6 +15,7 @@ const transpile = async (src, options = {}) => {
     prettier = false,
     prettierOpts = {},
     context = '/',
+    buildOptions = {},
     project // for studio support file, to keep deadline, TODO: remove if possible
   } = options
 
@@ -27,7 +28,7 @@ const transpile = async (src, options = {}) => {
   src = babelify(src, [flowPlugin])
 
   // don't know, maybe babel not support decorators along to private property
-  src = await transform(src, context, project)
+  src = await transform(src, context, project, buildOptions)
 
   // finally, wrap it
   src = makeWrapper(src).trim()
