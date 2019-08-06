@@ -10,7 +10,7 @@ test('constructor to deploy', () => {
   `
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:\"ClassMethod\",decorators:[\"view\"],returnType:\"any\",params:[]}};')
+  expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:"ClassMethod",decorators:["view"],returnType:"any",params:[]}};')
 })
 
 test('onreceive method', () => {
@@ -128,7 +128,7 @@ test('js remote', async () => {
   src = await transform(src)
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=()=>\"test\",t.exports}();class A{}const __contract=new A,__metadata={};')
+  expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=()=>"test",t.exports}();class A{}const __contract=new A,__metadata={};')
 })
 
 test('whitelist require', async () => {
@@ -167,6 +167,26 @@ test('prefer local module', async () => {
   await transform(src)
   babelify(src, [plugin])
   Terser.minify(src)
+})
+
+test('prefer remote module', async () => {
+  let src = `
+    const ms = require('ms')
+    @contract class A {
+      @pure test() { return ms(100) }
+    }
+  `
+  src = await transform(src, '/', null, { remote: { ms: true } })
+  expect(src).toBe(`const ms = require('ms');
+
+@contract
+class A {
+  @pure
+  test() {
+    return ms(100);
+  }
+
+}`)
 })
 
 test('inherit contract', async () => {
