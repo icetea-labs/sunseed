@@ -108,7 +108,19 @@ test('getState default', async () => {
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
   get numberState() {
-    return this.getState("numberState", 1);
+    const state = this.getState("numberState", 1);
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("numberState", target);
+        return true;
+      }
+    });
   }
 
   set numberState(value) {
@@ -116,7 +128,19 @@ test('getState default', async () => {
   }
 
   get arrayState() {
-    return this.getState("arrayState", [1, 2, 3]);
+    const state = this.getState("arrayState", [1, 2, 3]);
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("arrayState", target);
+        return true;
+      }
+    });
   }
 
   set arrayState(value) {
@@ -124,7 +148,19 @@ test('getState default', async () => {
   }
 
   get sumState() {
-    return this.getState("sumState", 1 + 2);
+    const state = this.getState("sumState", 1 + 2);
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("sumState", target);
+        return true;
+      }
+    });
   }
 
   set sumState(value) {
@@ -132,8 +168,20 @@ test('getState default', async () => {
   }
 
   get objState() {
-    return this.getState("objState", {
+    const state = this.getState("objState", {
       state: 1
+    });
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("objState", target);
+        return true;
+      }
     });
   }
 

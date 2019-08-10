@@ -10,7 +10,7 @@ test('constructor to deploy', () => {
   `
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:\"ClassMethod\",decorators:[\"view\"],returnType:\"any\",params:[]}};')
+  expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:"ClassMethod",decorators:["view"],returnType:"any",params:[]}};')
 })
 
 test('onreceive method', () => {
@@ -46,7 +46,7 @@ test('state', () => {
   `
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('class A{get property(){return this.getState("property")}set property(t){this.setState("property",t)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
+  expect(src).toBe('class A{get property(){const t=this.getState("property");return"object"!=typeof t?t:new Proxy(t,{set:(t,e,r)=>(t[e]=r,this.setState("property",t),!0)})}set property(t){this.setState("property",t)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
 })
 
 test('non constant', () => {
@@ -85,7 +85,19 @@ test('non constant state init', () => {
   }
 
   get property() {
-    return this.getState("property", Math.PI);
+    const state = this.getState("property", Math.PI);
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("property", target);
+        return true;
+      }
+    });
   }
 
   set property(value) {
@@ -128,7 +140,7 @@ test('js remote', async () => {
   src = await transform(src)
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=()=>\"test\",t.exports}();class A{}const __contract=new A,__metadata={};')
+  expect(src).toBe('const test=function(){const t={exports:{}};t.exports;return t.exports=()=>"test",t.exports}();class A{}const __contract=new A,__metadata={};')
 })
 
 test('whitelist require', async () => {
@@ -190,7 +202,19 @@ test('inherit contract', async () => {
   }
 
   get state() {
-    return this.getState("state");
+    const state = this.getState("state");
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("state", target);
+        return true;
+      }
+    });
   }
 
   set state(value) {
