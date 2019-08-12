@@ -1,6 +1,6 @@
 module.exports = src => `
 'use strict';
-const {msg, block, balanceOf, loadContract, isValidAddress} = this.runtime
+const {msg, block, balanceOf, loadContract, loadLibrary, isValidAddress} = this.runtime
 
 if (!msg.name) {
   throw new Error("Method name is required.")
