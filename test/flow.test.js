@@ -14,7 +14,19 @@ test('typed state', () => {
   src = babelify(src, [plugin])
   expect(src).toBe(`class Typed {
   get state() {
-    return this.getState("state");
+    const state = this.getState("state");
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("state", target);
+        return true;
+      }
+    });
   }
 
   set state(value) {
@@ -22,7 +34,19 @@ test('typed state', () => {
   }
 
   get #state() {
-    return this.getState("#state");
+    const state = this.getState("#state");
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("#state", target);
+        return true;
+      }
+    });
   }
 
   set #state(value) {
@@ -75,7 +99,19 @@ test('address state', () => {
   src = babelify(src, [flowPlugin])
   expect(src).toBe(`class AddressTest {
   get who() {
-    return this.getState("who");
+    const state = this.getState("who");
+
+    if (typeof state !== 'object') {
+      return state;
+    }
+
+    return new Proxy(state, {
+      set: (target, prop, value) => {
+        target[prop] = value;
+        this.setState("who", target);
+        return true;
+      }
+    });
   }
 
   set who(value) {

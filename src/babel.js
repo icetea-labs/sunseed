@@ -393,7 +393,17 @@ class IceTea {
     const wrap = template.smart(`
       class noname {
         get NAME() {
-          return this.getState("NAME", DEFAULT);
+          const state = this.getState("NAME", DEFAULT);
+          if(typeof state !== 'object') {
+            return state;
+          }
+          return new Proxy(state, {
+            set: (target, prop, value) => {
+              target[prop] = value;
+              this.setState("NAME", target);
+              return true;
+            }
+          })
         }
         set NAME(value) {
           this.setState("NAME", value);

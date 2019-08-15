@@ -465,7 +465,7 @@ function () {
     value: function wrapState(path) {
       var node = path.node;
       var name = node.key.name || '#' + node.key.id.name;
-      var wrap = template.smart("\n      class noname {\n        get NAME() {\n          return this.getState(\"NAME\", DEFAULT);\n        }\n        set NAME(value) {\n          this.setState(\"NAME\", value);\n        }\n      }\n    ");
+      var wrap = template.smart("\n      class noname {\n        get NAME() {\n          const state = this.getState(\"NAME\", DEFAULT);\n          if(typeof state !== 'object') {\n            return state;\n          }\n          return new Proxy(state, {\n            set: (target, prop, value) => {\n              target[prop] = value;\n              this.setState(\"NAME\", target);\n              return true;\n            }\n          })\n        }\n        set NAME(value) {\n          this.setState(\"NAME\", value);\n        }\n      }\n    ");
       path.replaceWithMultiple(wrap({
         NAME: name,
         DEFAULT: node.value
