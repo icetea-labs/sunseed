@@ -51,6 +51,8 @@ function () {
         prettierOpts,
         _options$context,
         context,
+        _options$buildOptions,
+        buildOptions,
         project,
         _args = arguments;
 
@@ -59,7 +61,7 @@ function () {
         switch (_context.prev = _context.next) {
           case 0:
             options = _args.length > 1 && _args[1] !== undefined ? _args[1] : {};
-            _options$minify = options.minify, minify = _options$minify === void 0 ? false : _options$minify, _options$minifyOpts = options.minifyOpts, minifyOpts = _options$minifyOpts === void 0 ? {} : _options$minifyOpts, _options$prettier = options.prettier, prettier = _options$prettier === void 0 ? false : _options$prettier, _options$prettierOpts = options.prettierOpts, prettierOpts = _options$prettierOpts === void 0 ? {} : _options$prettierOpts, _options$context = options.context, context = _options$context === void 0 ? '/' : _options$context, project = options.project; // The decorated plugins should append this, but for now we add here to simplify
+            _options$minify = options.minify, minify = _options$minify === void 0 ? false : _options$minify, _options$minifyOpts = options.minifyOpts, minifyOpts = _options$minifyOpts === void 0 ? {} : _options$minifyOpts, _options$prettier = options.prettier, prettier = _options$prettier === void 0 ? false : _options$prettier, _options$prettierOpts = options.prettierOpts, prettierOpts = _options$prettierOpts === void 0 ? {} : _options$prettierOpts, _options$context = options.context, context = _options$context === void 0 ? '/' : _options$context, _options$buildOptions = options.buildOptions, buildOptions = _options$buildOptions === void 0 ? {} : _options$buildOptions, project = options.project; // The decorated plugins should append this, but for now we add here to simplify
             // src += ';const __contract = new __contract_name();const __metadata = {}'
             // then, babelify it
 
@@ -68,7 +70,7 @@ function () {
             src = babelify(src, [flowPlugin]); // don't know, maybe babel not support decorators along to private property
 
             _context.next = 6;
-            return transform(src, context, project);
+            return transform(src, context, project, buildOptions);
 
           case 6:
             src = _context.sent;
