@@ -15,18 +15,34 @@ test('typed state', () => {
   expect(src).toBe(`class Typed {
   get state() {
     const state = this.getState("state");
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
 
-    if (typeof state !== 'object') {
-      return state;
-    }
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
 
-    return new Proxy(state, {
-      set: (target, prop, value) => {
-        target[prop] = value;
-        this.setState("state", target);
-        return true;
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("state", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("state", state);
+        return result;
       }
-    });
+
+    };
+    return new Proxy(state, handler);
   }
 
   set state(value) {
@@ -35,18 +51,34 @@ test('typed state', () => {
 
   get #state() {
     const state = this.getState("#state");
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
 
-    if (typeof state !== 'object') {
-      return state;
-    }
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
 
-    return new Proxy(state, {
-      set: (target, prop, value) => {
-        target[prop] = value;
-        this.setState("#state", target);
-        return true;
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("#state", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("#state", state);
+        return result;
       }
-    });
+
+    };
+    return new Proxy(state, handler);
   }
 
   set #state(value) {
@@ -100,18 +132,34 @@ test('address state', () => {
   expect(src).toBe(`class AddressTest {
   get who() {
     const state = this.getState("who");
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
 
-    if (typeof state !== 'object') {
-      return state;
-    }
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
 
-    return new Proxy(state, {
-      set: (target, prop, value) => {
-        target[prop] = value;
-        this.setState("who", target);
-        return true;
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("who", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("who", state);
+        return result;
       }
-    });
+
+    };
+    return new Proxy(state, handler);
   }
 
   set who(value) {
