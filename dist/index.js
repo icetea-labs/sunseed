@@ -103,6 +103,38 @@ function () {
   };
 }();
 
+var simpleTranspile = function simpleTranspile(src) {
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var _options$minify2 = options.minify,
+      minify = _options$minify2 === void 0 ? false : _options$minify2,
+      _options$minifyOpts2 = options.minifyOpts,
+      minifyOpts = _options$minifyOpts2 === void 0 ? {} : _options$minifyOpts2,
+      _options$prettier2 = options.prettier,
+      prettier = _options$prettier2 === void 0 ? false : _options$prettier2,
+      _options$prettierOpts2 = options.prettierOpts,
+      prettierOpts = _options$prettierOpts2 === void 0 ? {} : _options$prettierOpts2; // The decorated plugins should append this, but for now we add here to simplify
+  // src += ';const __contract = new __contract_name();const __metadata = {}'
+  // then, babelify it
+
+  src = babelify(src, [plugin]); // remove flow types
+
+  src = babelify(src, [flowPlugin]); // finally, wrap it
+
+  src = makeWrapper(src).trim(); // preparation for minified
+
+  src = prettify(src, {
+    semi: true
+  });
+
+  if (prettier) {
+    src = prettify(src, prettierOpts);
+  } else if (minify) {
+    src = doMinify(src, minifyOpts);
+  }
+
+  return src;
+};
+
 function prettify(src) {
   var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   return prettier.format(src, {
@@ -130,6 +162,7 @@ function doMinify(src) {
 
 module.exports = {
   transpile: transpile,
+  simpleTranspile: simpleTranspile,
   addWhiteListModule: addWhiteListModule,
   removeWhiteListModule: removeWhiteListModule,
   getWhiteListModules: getWhiteListModules,

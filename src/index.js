@@ -47,6 +47,37 @@ const transpile = async (src, options = {}) => {
   return src
 }
 
+const simpleTranspile = (src, options = {}) => {
+  const {
+    minify = false,
+    minifyOpts = {},
+    prettier = false,
+    prettierOpts = {}
+  } = options
+
+  // The decorated plugins should append this, but for now we add here to simplify
+  // src += ';const __contract = new __contract_name();const __metadata = {}'
+  // then, babelify it
+  src = babelify(src, [plugin])
+
+  // remove flow types
+  src = babelify(src, [flowPlugin])
+
+  // finally, wrap it
+  src = makeWrapper(src).trim()
+
+  // preparation for minified
+  src = prettify(src, { semi: true })
+
+  if (prettier) {
+    src = prettify(src, prettierOpts)
+  } else if (minify) {
+    src = doMinify(src, minifyOpts)
+  }
+
+  return src
+}
+
 function prettify (src, opts = {}) {
   return prettier.format(src, { parser: 'babel', plugins })
 }
@@ -66,4 +97,4 @@ function doMinify (src, opts = {}) {
   return result.code
 }
 
-module.exports = { transpile, addWhiteListModule, removeWhiteListModule, getWhiteListModules, setWhiteListModules }
+module.exports = { transpile, simpleTranspile, addWhiteListModule, removeWhiteListModule, getWhiteListModules, setWhiteListModules }
