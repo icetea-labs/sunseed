@@ -1,6 +1,6 @@
 {
   "name": "@iceteachain/sunseed",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Compile djs to raw js for deploying on Icetea Blockchain.",
   "main": "index.js",
   "browser": "dist/index.js",

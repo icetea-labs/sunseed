@@ -46,7 +46,7 @@ test('state', () => {
   `
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('class A{get property(){const t=this.getState("property");return"object"!=typeof t?t:new Proxy(t,{set:(t,e,r)=>(t[e]=r,this.setState("property",t),!0)})}set property(t){this.setState("property",t)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
+  expect(src).toBe('class A{get property(){const e=this.getState("property"),t=this.setState,r={get(e,t,o){const p=Object.getOwnPropertyDescriptor(e,t),n=Reflect.get(e,t,o);return(!p||p.writable||p.configurable)&&"object"==typeof n?new Proxy(n,r):n},defineProperty(r,o,p){const n=Reflect.defineProperty(r,o,p);return t("property",e),n},deleteProperty(r,o){const p=Reflect.deleteProperty(r,o);return t("property",e),p}};return new Proxy(e,r)}set property(e){this.setState("property",e)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
 })
 
 test('non constant', () => {
@@ -86,18 +86,34 @@ test('non constant state init', () => {
 
   get property() {
     const state = this.getState("property", Math.PI);
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
 
-    if (typeof state !== 'object') {
-      return state;
-    }
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
 
-    return new Proxy(state, {
-      set: (target, prop, value) => {
-        target[prop] = value;
-        this.setState("property", target);
-        return true;
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("property", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("property", state);
+        return result;
       }
-    });
+
+    };
+    return new Proxy(state, handler);
   }
 
   set property(value) {
@@ -223,18 +239,34 @@ test('inherit contract', async () => {
 
   get state() {
     const state = this.getState("state");
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
 
-    if (typeof state !== 'object') {
-      return state;
-    }
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
 
-    return new Proxy(state, {
-      set: (target, prop, value) => {
-        target[prop] = value;
-        this.setState("state", target);
-        return true;
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("state", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("state", state);
+        return result;
       }
-    });
+
+    };
+    return new Proxy(state, handler);
   }
 
   set state(value) {

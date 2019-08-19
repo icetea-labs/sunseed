@@ -394,16 +394,30 @@ class IceTea {
       class noname {
         get NAME() {
           const state = this.getState("NAME", DEFAULT);
-          if(typeof state !== 'object') {
-            return state;
-          }
-          return new Proxy(state, {
-            set: (target, prop, value) => {
-              target[prop] = value;
-              this.setState("NAME", target);
-              return true;
+          const setState = this.setState
+
+          const handler = {
+            get (target, property, receiver) {
+              const desc = Object.getOwnPropertyDescriptor(target, property)
+              const value = Reflect.get(target, property, receiver);
+              if (desc && !desc.writable && !desc.configurable) return value
+              if (typeof value === 'object') {
+                return new Proxy(value, handler);
+              }
+              return value;
+            },
+            defineProperty (target, property, descriptor) {
+              const result = Reflect.defineProperty(target, property, descriptor)
+              setState("NAME", state);
+              return result
+            },
+            deleteProperty (target, property) {
+              const result = Reflect.deleteProperty(target, property)
+              setState("NAME", state);
+              return result
             }
-          })
+          }
+          return new Proxy(state, handler)
         }
         set NAME(value) {
           this.setState("NAME", value);
