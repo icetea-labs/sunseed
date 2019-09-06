@@ -109,6 +109,11 @@ test('getState default', async () => {
   expect(src).toBe(`class A {
   get numberState() {
     const state = this.getState("numberState", 1);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
@@ -145,6 +150,11 @@ test('getState default', async () => {
 
   get arrayState() {
     const state = this.getState("arrayState", [1, 2, 3]);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
@@ -181,6 +191,11 @@ test('getState default', async () => {
 
   get sumState() {
     const state = this.getState("sumState", 1 + 2);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
@@ -219,6 +234,11 @@ test('getState default', async () => {
     const state = this.getState("objState", {
       state: 1
     });
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {

@@ -394,6 +394,9 @@ class IceTea {
       class noname {
         get NAME() {
           const state = this.getState("NAME", DEFAULT);
+          if (typeof state !== "object") {
+            return state;
+          }
           const setState = this.setState
 
           const handler = {

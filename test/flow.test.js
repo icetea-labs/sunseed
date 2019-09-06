@@ -15,6 +15,11 @@ test('typed state', () => {
   expect(src).toBe(`class Typed {
   get state() {
     const state = this.getState("state");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
@@ -51,6 +56,11 @@ test('typed state', () => {
 
   get #state() {
     const state = this.getState("#state");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
@@ -132,6 +142,11 @@ test('address state', () => {
   expect(src).toBe(`class AddressTest {
   get who() {
     const state = this.getState("who");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {

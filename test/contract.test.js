@@ -46,7 +46,7 @@ test('state', () => {
   `
   src = babelify(src, [plugin])
   src = Terser.minify(src).code
-  expect(src).toBe('class A{get property(){const e=this.getState("property"),t=this.setState,r={get(e,t,o){const p=Object.getOwnPropertyDescriptor(e,t),n=Reflect.get(e,t,o);return(!p||p.writable||p.configurable)&&"object"==typeof n?new Proxy(n,r):n},defineProperty(r,o,p){const n=Reflect.defineProperty(r,o,p);return t("property",e),n},deleteProperty(r,o){const p=Reflect.deleteProperty(r,o);return t("property",e),p}};return new Proxy(e,r)}set property(e){this.setState("property",e)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
+  expect(src).toBe('class A{get property(){const e=this.getState("property");if(\"object\"!=typeof e)return e;const t=this.setState,r={get(e,t,o){const p=Object.getOwnPropertyDescriptor(e,t),n=Reflect.get(e,t,o);return(!p||p.writable||p.configurable)&&"object"==typeof n?new Proxy(n,r):n},defineProperty(r,o,p){const n=Reflect.defineProperty(r,o,p);return t("property",e),n},deleteProperty(r,o){const p=Reflect.deleteProperty(r,o);return t("property",e),p}};return new Proxy(e,r)}set property(e){this.setState("property",e)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
 })
 
 test('non constant', () => {
@@ -86,6 +86,11 @@ test('non constant state init', () => {
 
   get property() {
     const state = this.getState("property", Math.PI);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
@@ -239,6 +244,11 @@ test('inherit contract', async () => {
 
   get state() {
     const state = this.getState("state");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
     const setState = this.setState;
     const handler = {
       get(target, property, receiver) {
