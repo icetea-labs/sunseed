@@ -428,7 +428,7 @@ class IceTea {
         }
         set NAME(value) {
           const real = value && value.__$teaRealObj$__;
-          this.setState("NAME", typeof real !== 'function' ? value : real());
+          this.setState("NAME", typeof real !== 'function' ? value : real.call(value));
         }
       }
     `)
