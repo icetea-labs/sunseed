@@ -415,19 +415,19 @@ class IceTea {
             }
           }
 
-          const setState = this.setState
+          const setState = this.setState;
           ['set', 'defineProperty', 'deleteProperty'].forEach(name => {
             handler[name] = (...args) => {
-              const r = Reflect[name](...args)
+              const r = Reflect[name](...args);
               setState("NAME", state);
-              return r
+              return r;
             }
-          })
+          });
 
-          return new Proxy(state, handler)
+          return new Proxy(state, handler);
         }
         set NAME(value) {
-          const real = value && value.__$teaRealObj$__
+          const real = value && value.__$teaRealObj$__;
           this.setState("NAME", typeof real !== 'function' ? value : real());
         }
       }
