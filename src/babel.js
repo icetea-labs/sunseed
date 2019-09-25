@@ -393,37 +393,42 @@ class IceTea {
     const wrap = template.smart(`
       class noname {
         get NAME() {
+          // this will throw if msg.type if 'pure'
           const state = this.getState("NAME", DEFAULT);
-          if (typeof state !== "object") {
+
+          // no need to check with Object.isFrozen since we can use msg.type
+          // note that typeof null is 'object'
+          if (state === null || typeof state !== 'object' || 'view' === msg.type) {
             return state;
           }
-          const setState = this.setState
 
           const handler = {
             get (target, property, receiver) {
-              const desc = Object.getOwnPropertyDescriptor(target, property)
-              const value = Reflect.get(target, property, receiver);
-              if (desc && !desc.writable && !desc.configurable) return value
-              if (typeof value === 'object') {
-                return new Proxy(value, handler);
+              const v = Reflect.get(target, property, receiver);
+              if (property === '__$teaRealObj$__') {
+                return () => v;
               }
-              return value;
-            },
-            defineProperty (target, property, descriptor) {
-              const result = Reflect.defineProperty(target, property, descriptor)
-              setState("NAME", state);
-              return result
-            },
-            deleteProperty (target, property) {
-              const result = Reflect.deleteProperty(target, property)
-              setState("NAME", state);
-              return result
+              if (v === null || typeof v !== 'object') {
+                return v;
+              }
+              return new Proxy(v, handler);
             }
           }
+
+          const setState = this.setState
+          ['set', 'defineProperty', 'deleteProperty'].forEach(name => {
+            handler[name] = (...args) => {
+              const r = Reflect[name](...args)
+              setState("NAME", state);
+              return r
+            }
+          })
+
           return new Proxy(state, handler)
         }
         set NAME(value) {
-          this.setState("NAME", value);
+          const real = value && value.__$teaRealObj$__
+          this.setState("NAME", typeof real !== 'function' ? value : real());
         }
       }
     `)
