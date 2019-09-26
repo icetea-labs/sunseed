@@ -393,42 +393,10 @@ class IceTea {
     const wrap = template.smart(`
       class noname {
         get NAME() {
-          // this will throw if msg.type if 'pure'
-          const state = this.getState("NAME", DEFAULT);
-
-          // no need to check with Object.isFrozen since we can use msg.type
-          // note that typeof null is 'object'
-          if (state === null || typeof state !== 'object' || 'view' === msg.type) {
-            return state;
-          }
-
-          const handler = {
-            get (target, property, receiver) {
-              const v = Reflect.get(target, property, receiver);
-              if (property === '__$teaRealObj$__') {
-                return () => v;
-              }
-              if (v === null || typeof v !== 'object') {
-                return v;
-              }
-              return new Proxy(v, handler);
-            }
-          }
-
-          const setState = this.setState;
-          ['set', 'defineProperty', 'deleteProperty'].forEach(name => {
-            handler[name] = (...args) => {
-              const r = Reflect[name](...args);
-              setState("NAME", state);
-              return r;
-            }
-          });
-
-          return new Proxy(state, handler);
+          return __proxyState$Get("NAME", DEFAULT);
         }
         set NAME(value) {
-          const real = value && value.__$teaRealObj$__;
-          this.setState("NAME", typeof real !== 'function' ? value : real.call(value));
+          this.setState("NAME", __proxyState$Unwrap(value));
         }
       }
     `)

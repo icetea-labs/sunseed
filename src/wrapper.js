@@ -1,10 +1,77 @@
-module.exports = src => `
-'use strict';
+module.exports = (src, {
+  noState
+} = {}) => {
+
+  const stateFunc = noState ? '' : `
+  const __proxyState$Unwrap = value => {
+    const real = value && value.__proxyState$RealObj;
+    return typeof real !== 'function' ? value : real.call(value);
+  }
+
+  const __proxyState$Get = (name, defValue) => {
+
+    // this will throw if msg.callType if 'pure'
+    const state = this.getState(name, defValue);
+  
+    // no need to check with Object.isFrozen since we can use msg.type
+    // note that typeof null is 'object'
+    if (state === null || typeof state !== 'object' || 'view' === msg.callType) {
+      return state;
+    }
+
+    const saveState = () => this.setState(name, state);
+  
+    const makeProxy = realObj => {
+      const handler = {
+        get (target, property, receiver) {
+          if (property === '__proxyState$RealObj') {
+            return () => realObj;
+          }
+  
+          const v = Reflect.get(target, property, receiver);
+          if (v === null || typeof v !== 'object') {
+            return v;
+          }
+          return makeProxy(v)
+        },
+
+        set (target, prop, value, receiver) {
+          const r = Reflect.set(target, prop, __proxyState$Unwrap(value), receiver);
+          saveState();
+          return r;
+        },
+
+        defineProperty (target, property, desc) {
+          if (desc.value) {
+            desc.value = __proxyState$Unwrap(desc.value)
+          }
+          const r = Reflect.defineProperty(target, property, desc);
+          saveState();
+          return r;
+        },
+
+        deleteProperty (target, property) {
+          const r = Reflect.deleteProperty(target, property);
+          saveState();
+          return r;
+        }
+      }
+  
+      return new Proxy(realObj, handler);
+    }
+  
+    return makeProxy(state)
+  }
+  `
+
+  return `'use strict';
 const {msg, block, balanceOf, loadContract, loadLibrary, isValidAddress, deployContract} = this.runtime
 
 if (!msg.name) {
   throw new Error("Method name is required.")
 }
+
+${stateFunc}
 
 ${src}
 
@@ -83,3 +150,4 @@ ${src}
   return __checkType(__c.instance[__name], __metadata[__name], 'fieldType', 'field');
 }
 `
+}
