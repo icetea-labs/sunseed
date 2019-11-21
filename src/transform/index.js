@@ -9,7 +9,14 @@ const resolveExternal = require('../external')
 const importToRequire = require('../import2require')
 const babelify = require('./babelify')
 
-exports.transform = async (src, context = '/', project) => {
+/**
+ * transform bundle library with contract source
+ * @param {string} src - contract source require external library
+ * @param {string} context - for recursive require
+ * @param {Object} project - support icetea-studio (does not use fs)
+ * @param {Object} options - bundle module config
+ */
+exports.transform = async (src, context = '/', project = null, options = {}) => {
   src = await babelify(src, [importToRequire])
   const parsed = babelParser.parse(src, {
     sourceType: 'module',
@@ -32,7 +39,7 @@ exports.transform = async (src, context = '/', project) => {
   })
 
   await Promise.all(Object.keys(requires).map(async value => {
-    if (isWhitelistModule(value)) {
+    if (isWhitelistModule(value) || (options.remote && options.remote[value])) {
       delete requires[value]
       return
     }
@@ -42,7 +49,7 @@ exports.transform = async (src, context = '/', project) => {
       }
       const data = (await axios.get(value)).data
       if (typeof data === 'string') {
-        requires[value] = await exports.transform(data, value)
+        requires[value] = await exports.transform(data, value, null, options)
       } else {
         requires[value] = data
       }
@@ -57,7 +64,8 @@ exports.transform = async (src, context = '/', project) => {
       }
       const data = (await axios.get(url.resolve(context, value))).data
       if (typeof data === 'string') {
-        requires[value] = await exports.transform(data, url.resolve(context, value))
+        // try to parse json string
+        requires[value] = await exports.transform(data, url.resolve(context, value), null, options)
       } else {
         requires[value] = data
       }
@@ -96,14 +104,14 @@ exports.transform = async (src, context = '/', project) => {
       requires[value] = data
     } catch (err) {
       if (err instanceof SyntaxError) {
-        requires[value] = await exports.transform(data, path.dirname(filePath), project)
+        requires[value] = await exports.transform(data, path.dirname(filePath), project, options)
       } else {
         throw err
       }
     }
   }))
 
-  if (requires === {}) {
+  if (Object.keys(requires).length === 0) {
     return src
   }
 

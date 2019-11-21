@@ -1,3 +1,4 @@
+const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
 const plugin = require('../src/babel')
 const { babelify } = require('../src/transform')
 
@@ -13,7 +14,40 @@ test('typed state', () => {
   src = babelify(src, [plugin])
   expect(src).toBe(`class Typed {
   get state() {
-    return this.getState("state");
+    const state = this.getState("state");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("state", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("state", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
   }
 
   set state(value) {
@@ -21,7 +55,40 @@ test('typed state', () => {
   }
 
   get #state() {
-    return this.getState("#state");
+    const state = this.getState("#state");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("#state", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("#state", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
   }
 
   set #state(value) {
@@ -57,6 +124,82 @@ const __metadata = {
       name: "arg2",
       type: ["string"],
       defaultValue: null
+    }]
+  }
+};`)
+})
+
+test('address state', () => {
+  let src = `
+    @contract class AddressTest {
+      @state who: address
+
+      @transaction withdraw(who: address) { }
+    }
+  `
+  src = babelify(src, [plugin])
+  src = babelify(src, [flowPlugin])
+  expect(src).toBe(`class AddressTest {
+  get who() {
+    const state = this.getState("who");
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("who", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("who", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
+  }
+
+  set who(value) {
+    this.setState("who", value);
+  }
+
+  withdraw(who) {}
+
+}
+
+const __contract = new AddressTest();
+
+const __metadata = {
+  who: {
+    type: "ClassProperty",
+    decorators: ["state", "internal"],
+    fieldType: ["address"]
+  },
+  withdraw: {
+    type: "ClassMethod",
+    decorators: ["transaction"],
+    returnType: "any",
+    params: [{
+      name: "who",
+      type: ["address"]
     }]
   }
 };`)

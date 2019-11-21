@@ -15,6 +15,7 @@ const transpile = async (src, options = {}) => {
     prettier = false,
     prettierOpts = {},
     context = '/',
+    buildOptions = {},
     project // for studio support file, to keep deadline, TODO: remove if possible
   } = options
 
@@ -27,7 +28,7 @@ const transpile = async (src, options = {}) => {
   src = babelify(src, [flowPlugin])
 
   // don't know, maybe babel not support decorators along to private property
-  src = await transform(src, context, project)
+  src = await transform(src, context, project, buildOptions)
 
   // finally, wrap it
   src = makeWrapper(src).trim()
@@ -42,6 +43,37 @@ const transpile = async (src, options = {}) => {
   }
 
   // console.log(src)
+
+  return src
+}
+
+const simpleTranspile = (src, options = {}) => {
+  const {
+    minify = false,
+    minifyOpts = {},
+    prettier = false,
+    prettierOpts = {}
+  } = options
+
+  // The decorated plugins should append this, but for now we add here to simplify
+  // src += ';const __contract = new __contract_name();const __metadata = {}'
+  // then, babelify it
+  src = babelify(src, [plugin])
+
+  // remove flow types
+  src = babelify(src, [flowPlugin])
+
+  // finally, wrap it
+  src = makeWrapper(src).trim()
+
+  // preparation for minified
+  src = prettify(src, { semi: true })
+
+  if (prettier) {
+    src = prettify(src, prettierOpts)
+  } else if (minify) {
+    src = doMinify(src, minifyOpts)
+  }
 
   return src
 }
@@ -65,4 +97,4 @@ function doMinify (src, opts = {}) {
   return result.code
 }
 
-module.exports = { transpile, addWhiteListModule, removeWhiteListModule, getWhiteListModules, setWhiteListModules }
+module.exports = { transpile, simpleTranspile, addWhiteListModule, removeWhiteListModule, getWhiteListModules, setWhiteListModules }

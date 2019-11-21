@@ -1,8 +1,8 @@
 # sunseed
 
-```
-npm i
-node test.js
+```bash
+$ npm i
+$ npm run test
 ```
 
 - Support both CLI and API.

@@ -29,6 +29,14 @@ var resolveExternal = require('../external');
 var importToRequire = require('../import2require');
 
 var babelify = require('./babelify');
+/**
+ * transform bundle library with contract source
+ * @param {string} src - contract source require external library
+ * @param {string} context - for recursive require
+ * @param {Object} project - support icetea-studio (does not use fs)
+ * @param {Object} options - bundle module config
+ */
+
 
 exports.transform =
 /*#__PURE__*/
@@ -38,6 +46,7 @@ function () {
   _regenerator["default"].mark(function _callee2(src) {
     var context,
         project,
+        options,
         parsed,
         requires,
         _args2 = arguments;
@@ -46,11 +55,12 @@ function () {
         switch (_context2.prev = _context2.next) {
           case 0:
             context = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : '/';
-            project = _args2.length > 2 ? _args2[2] : undefined;
-            _context2.next = 4;
+            project = _args2.length > 2 && _args2[2] !== undefined ? _args2[2] : null;
+            options = _args2.length > 3 && _args2[3] !== undefined ? _args2[3] : {};
+            _context2.next = 5;
             return babelify(src, [importToRequire]);
 
-          case 4:
+          case 5:
             src = _context2.sent;
             parsed = babelParser.parse(src, {
               sourceType: 'module',
@@ -75,7 +85,7 @@ function () {
                 requires[value] = value;
               }
             });
-            _context2.next = 10;
+            _context2.next = 11;
             return Promise.all(Object.keys(requires).map(
             /*#__PURE__*/
             function () {
@@ -88,7 +98,7 @@ function () {
                   while (1) {
                     switch (_context.prev = _context.next) {
                       case 0:
-                        if (!isWhitelistModule(value)) {
+                        if (!(isWhitelistModule(value) || options.remote && options.remote[value])) {
                           _context.next = 3;
                           break;
                         }
@@ -122,7 +132,7 @@ function () {
                         }
 
                         _context.next = 12;
-                        return exports.transform(_data, value);
+                        return exports.transform(_data, value, null, options);
 
                       case 12:
                         requires[value] = _context.sent;
@@ -169,7 +179,7 @@ function () {
                         }
 
                         _context.next = 28;
-                        return exports.transform(_data2, url.resolve(context, value));
+                        return exports.transform(_data2, url.resolve(context, value), null, options);
 
                       case 28:
                         requires[value] = _context.sent;
@@ -231,7 +241,7 @@ function () {
                         }
 
                         _context.next = 50;
-                        return exports.transform(data, path.dirname(filePath), project);
+                        return exports.transform(data, path.dirname(filePath), project, options);
 
                       case 50:
                         requires[value] = _context.sent;
@@ -254,19 +264,19 @@ function () {
               };
             }()));
 
-          case 10:
-            if (!(requires === {})) {
-              _context2.next = 12;
+          case 11:
+            if (!(Object.keys(requires).length === 0)) {
+              _context2.next = 13;
               break;
             }
 
             return _context2.abrupt("return", src);
 
-          case 12:
-            _context2.next = 14;
+          case 13:
+            _context2.next = 15;
             return babelify(src, [resolveExternal(requires)]);
 
-          case 14:
+          case 15:
             src = _context2.sent;
 
             if (src.endsWith(';')) {
@@ -275,7 +285,7 @@ function () {
 
             return _context2.abrupt("return", src);
 
-          case 17:
+          case 18:
           case "end":
             return _context2.stop();
         }

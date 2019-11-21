@@ -108,7 +108,40 @@ test('getState default', async () => {
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
   get numberState() {
-    return this.getState("numberState", 1);
+    const state = this.getState("numberState", 1);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("numberState", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("numberState", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
   }
 
   set numberState(value) {
@@ -116,7 +149,40 @@ test('getState default', async () => {
   }
 
   get arrayState() {
-    return this.getState("arrayState", [1, 2, 3]);
+    const state = this.getState("arrayState", [1, 2, 3]);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("arrayState", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("arrayState", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
   }
 
   set arrayState(value) {
@@ -124,7 +190,40 @@ test('getState default', async () => {
   }
 
   get sumState() {
-    return this.getState("sumState", 1 + 2);
+    const state = this.getState("sumState", 1 + 2);
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("sumState", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("sumState", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
   }
 
   set sumState(value) {
@@ -132,9 +231,42 @@ test('getState default', async () => {
   }
 
   get objState() {
-    return this.getState("objState", {
+    const state = this.getState("objState", {
       state: 1
     });
+
+    if (typeof state !== "object") {
+      return state;
+    }
+
+    const setState = this.setState;
+    const handler = {
+      get(target, property, receiver) {
+        const desc = Object.getOwnPropertyDescriptor(target, property);
+        const value = Reflect.get(target, property, receiver);
+        if (desc && !desc.writable && !desc.configurable) return value;
+
+        if (typeof value === 'object') {
+          return new Proxy(value, handler);
+        }
+
+        return value;
+      },
+
+      defineProperty(target, property, descriptor) {
+        const result = Reflect.defineProperty(target, property, descriptor);
+        setState("objState", state);
+        return result;
+      },
+
+      deleteProperty(target, property) {
+        const result = Reflect.deleteProperty(target, property);
+        setState("objState", state);
+        return result;
+      }
+
+    };
+    return new Proxy(state, handler);
   }
 
   set objState(value) {
