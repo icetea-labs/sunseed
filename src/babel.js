@@ -186,7 +186,7 @@ class IceTea {
       }
     }
 
-    if (node.value && !this.isConstant(node.value) && !isMethod(node)) {
+    if (states.length && node.value && !this.isConstant(node.value) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
       let onDeploy = this.findMethod(klassPath.node, '__on_deployed')
       if (!onDeploy) {
@@ -211,10 +211,10 @@ class IceTea {
         DEFAULT: node.value
       }))
 
-      // initialization is already added constructor
-      if (states.length === 0) {
-        path.remove()
-      }
+      // initialization is already added to constructor
+      // if (states.length === 0) {
+      //   path.remove()
+      // }
     }
 
     if (states.length > 0) {

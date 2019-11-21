@@ -70,9 +70,12 @@ ${src}
       })
     }
     // Call the function, finally
+    if (typeof __c.instance.onready === 'function') __c.instance.onready()
     const result = __c.instance[__name].apply(__c.instance, params);
     return __checkType(result, __metadata[__name], 'returnType', "return");
   }
+
+  if (typeof __c.instance.onready === 'function') __c.instance.onready()
   return __checkType(__c.instance[__name], __metadata[__name], 'fieldType', 'field');
 }
 `
