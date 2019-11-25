@@ -14,85 +14,19 @@ test('typed state', () => {
   src = babelify(src, [plugin])
   expect(src).toBe(`class Typed {
   get state() {
-    const state = this.getState("state");
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("state", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("state", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
+    return __proxyState$Get("state");
   }
 
   set state(value) {
-    this.setState("state", value);
+    this.setState("state", __proxyState$Unwrap(value));
   }
 
   get #state() {
-    const state = this.getState("#state");
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("#state", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("#state", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
+    return __proxyState$Get("#state");
   }
 
   set #state(value) {
-    this.setState("#state", value);
+    this.setState("#state", __proxyState$Unwrap(value));
   }
 
   test(arg1: number = 1, arg2: string = null): void {}
@@ -141,44 +75,11 @@ test('address state', () => {
   src = babelify(src, [flowPlugin])
   expect(src).toBe(`class AddressTest {
   get who() {
-    const state = this.getState("who");
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("who", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("who", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
+    return __proxyState$Get("who");
   }
 
   set who(value) {
-    this.setState("who", value);
+    this.setState("who", __proxyState$Unwrap(value));
   }
 
   withdraw(who) {}
