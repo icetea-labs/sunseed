@@ -1,7 +1,6 @@
 module.exports = (src, {
   noState
 } = {}) => {
-
   const stateFunc = noState ? '' : `
   const __proxyState$Unwrap = value => {
     const real = value && value.__proxyState$RealObj;

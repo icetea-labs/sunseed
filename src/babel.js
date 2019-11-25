@@ -198,7 +198,7 @@ class IceTea {
         `)
         klassPath.node.body.body.unshift(...fn().body.body)
         onDeploy = klassPath.node.body.body[0]
-        this.metadata['__on_deployed'] = {
+        this.metadata.__on_deployed = {
           type: 'ClassMethod',
           decorators: ['payable']
         }
@@ -255,22 +255,22 @@ class IceTea {
       }
 
       if (!isMethod(node)) {
-        this.metadata[name]['fieldType'] = getTypeName(node.typeAnnotation)
+        this.metadata[name].fieldType = getTypeName(node.typeAnnotation)
         if (decorators.length === 0) {
           if (name.startsWith('#')) { // private property
-            this.metadata[name]['decorators'].push('pure')
+            this.metadata[name].decorators.push('pure')
           } else {
-            this.metadata[name]['decorators'].push('internal')
+            this.metadata[name].decorators.push('internal')
           }
         }
       } else {
-        this.metadata[name]['returnType'] = getTypeName(node.value.returnType)
-        this.metadata[name]['params'] = getTypeParams(node.value.params)
+        this.metadata[name].returnType = getTypeName(node.value.returnType)
+        this.metadata[name].params = getTypeParams(node.value.params)
         if (decorators.length === 0) {
           if (name.startsWith('#')) { // private function
-            this.metadata[name]['decorators'].push('view')
+            this.metadata[name].decorators.push('view')
           } else {
-            this.metadata[name]['decorators'].push('internal')
+            this.metadata[name].decorators.push('internal')
           }
         }
       }
@@ -333,10 +333,10 @@ class IceTea {
       if (payables.length === 0 && klass.body.body.length > 0) {
         throw this.buildError('Non-payable @onreceive function should have empty body.', klass)
       }
-      if (this.metadata['__on_received']) {
+      if (this.metadata.__on_received) {
         throw this.buildError('Only one @onreceive is allowed per class.', klass)
       }
-      this.metadata['__on_received'] = klass.key.name
+      this.metadata.__on_received = klass.key.name
     }
 
     this.deleteDecorators(klass, this.findDecorators(klass, ...METHOD_DECORATORS))

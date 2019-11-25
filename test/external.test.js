@@ -3,7 +3,7 @@ const { babelify } = require('../src/transform')
 
 describe('external plugin', () => {
   test('require non string literal', () => {
-    let src = `
+    const src = `
       const test = require(1)
     `
     babelify(src, [external([])])
