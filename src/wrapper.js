@@ -65,6 +65,7 @@ module.exports = (src, {
 
   return `'use strict';
 const {msg, block, balanceOf, loadContract, loadLibrary, isValidAddress, deployContract} = this.runtime
+const { path: __path } = require(';').stateUtil(this)
 
 if (!msg.name) {
   throw new Error("Method name is required.")

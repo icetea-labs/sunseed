@@ -87,15 +87,18 @@ test('non constant state init', () => {
   let src = `
     @contract class A {
       @state property = Math.PI
+      xyz = property.value()
     }
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
   __on_deployed() {
-    this.property = Math.PI;
+    this.property.value(Math.PI);
+    this.xyz = property.value();
   }
 
-  property = __path("property", Math.PI);
+  property = __path("property");
+  xyz = msg.name === '__on_deployed' ? undefined : property.value();
 }
 
 const __contract = new A();
@@ -108,6 +111,11 @@ const __metadata = {
   property: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
+    fieldType: "any"
+  },
+  xyz: {
+    type: "ClassProperty",
+    decorators: ["internal"],
     fieldType: "any"
   }
 };`)
@@ -197,7 +205,7 @@ test('inherit contract', async () => {
   let src = `
     class A {
       constructor() { console.log('A') }
-      @state state: number 
+      @state state: number
     }
     @contract class B extends A {
       constructor() {

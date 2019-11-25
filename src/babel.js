@@ -204,17 +204,12 @@ class IceTea {
         }
       }
       const fn = template.smart(`
-        this.NAME = DEFAULT
+        this.NAME.value(DEFAULT)
       `)
-      onDeploy.body.body.unshift(fn({
+      onDeploy.body.body.push(fn({
         NAME: name,
         DEFAULT: node.value
       }))
-
-      // initialization is already added to constructor
-      // if (states.length === 0) {
-      //   path.remove()
-      // }
     }
 
     if (states.length > 0) {
@@ -232,7 +227,7 @@ class IceTea {
         throw this.buildError(`${name} cannot be marked with both @state and @pure.`, node)
       }
 
-      this.wrapState(path)
+      this.wrapState(path, this.isConstant(node.value))
 
       if (!this.metadata[name]) {
         const decoratorNames = decorators.map(decorator => decorator.expression.name)
@@ -246,6 +241,36 @@ class IceTea {
         }
       }
       return
+    }
+
+    if (!this.isConstant(node.value) && !isMethod(node)) {
+      const klassPath = path.parentPath.parentPath
+      let onDeploy = this.findMethod(klassPath.node, '__on_deployed')
+      if (!onDeploy) {
+        // class noname is only used for valid syntax
+        const fn = template.smart(`
+          class noname {
+            __on_deployed () {}
+          }
+        `)
+        klassPath.node.body.body.unshift(...fn().body.body)
+        onDeploy = klassPath.node.body.body[0]
+        this.metadata.__on_deployed = {
+          type: 'ClassMethod',
+          decorators: ['payable']
+        }
+      }
+      const fn = template.smart('this.PROPERTY = VALUE')
+      onDeploy.body.body.push(fn({
+        PROPERTY: name,
+        VALUE: node.value
+      }))
+
+      const property = template.smart('NAME = msg.name === \'__on_deployed\' ? undefined : VALUE')
+      path.replaceWith(property({
+        NAME: name,
+        VALUE: node.value
+      }))
     }
 
     if (!this.metadata[name]) {
@@ -387,7 +412,7 @@ class IceTea {
     })
   }
 
-  wrapState (path) {
+  wrapState (path, useInitValue = true) {
     const { node } = path
     const name = node.key.name || ('#' + node.key.id.name)
     const wrap = template.smart(`
@@ -399,7 +424,7 @@ class IceTea {
     })
     path.replaceWithMultiple(wrap({
       NAME: name,
-      DEFAULT: node.value
+      DEFAULT: useInitValue ? node.value : undefined
     }).body.body)
   }
 
@@ -465,6 +490,9 @@ class IceTea {
   }
 
   isConstant (value) {
+    if (value === null || value === undefined) {
+      return true
+    }
     const { types } = this
     if (types.isLiteral(value) && value.type !== 'TemplateLiteral') {
       return true
