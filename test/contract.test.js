@@ -45,8 +45,19 @@ test('state', () => {
     }
   `
   src = babelify(src, [plugin])
-  src = Terser.minify(src).code
-  expect(src).toBe('class A{get property(){return __proxyState$Get("property")}set property(t){this.setState("property",__proxyState$Unwrap(t))}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
+  expect(src).toBe(`class A {
+  property = __path("property");
+}
+
+const __contract = new A();
+
+const __metadata = {
+  property: {
+    type: "ClassProperty",
+    decorators: ["state", "internal"],
+    fieldType: "any"
+  }
+};`)
 })
 
 test('non constant', () => {
@@ -84,14 +95,7 @@ test('non constant state init', () => {
     this.property = Math.PI;
   }
 
-  get property() {
-    return __proxyState$Get("property", Math.PI);
-  }
-
-  set property(value) {
-    this.setState("property", __proxyState$Unwrap(value));
-  }
-
+  property = __path("property", Math.PI);
 }
 
 const __contract = new A();
@@ -209,14 +213,7 @@ test('inherit contract', async () => {
     console.log('A');
   }
 
-  get state() {
-    return __proxyState$Get("state");
-  }
-
-  set state(value) {
-    this.setState("state", __proxyState$Unwrap(value));
-  }
-
+  state = __path("state");
 }
 
 class B extends A {

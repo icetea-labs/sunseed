@@ -80,19 +80,22 @@ test('not use private function with state', () => {
 })
 
 test('try transpile', async () => {
-  const src = `
-    @contract class A {
-      @state state = 1
-    }
-  `
+  const cannotMinStateSrc = `
+  @contract class A {
+    @state state = 1
+  }
+`
+
   const cannotMinSrc = `
     @contract class A {
       @pure state = () => 1
     }
   `
 
-  await transpile(src, { prettier: true })
-  await transpile(src, { minify: true })
+  await transpile(cannotMinStateSrc, { prettier: true })
+  await transpile(cannotMinSrc, { prettier: true })
+  // TODO: wait for Terser support classProperties
+  await expect(transpile(cannotMinStateSrc, { minify: true })).rejects.toThrow(Error)
   await expect(transpile(cannotMinSrc, { minify: true })).rejects.toThrow(Error)
 })
 
@@ -107,40 +110,12 @@ test('getState default', async () => {
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
-  get numberState() {
-    return __proxyState$Get("numberState", 1);
-  }
-
-  set numberState(value) {
-    this.setState("numberState", __proxyState$Unwrap(value));
-  }
-
-  get arrayState() {
-    return __proxyState$Get("arrayState", [1, 2, 3]);
-  }
-
-  set arrayState(value) {
-    this.setState("arrayState", __proxyState$Unwrap(value));
-  }
-
-  get sumState() {
-    return __proxyState$Get("sumState", 1 + 2);
-  }
-
-  set sumState(value) {
-    this.setState("sumState", __proxyState$Unwrap(value));
-  }
-
-  get objState() {
-    return __proxyState$Get("objState", {
-      state: 1
-    });
-  }
-
-  set objState(value) {
-    this.setState("objState", __proxyState$Unwrap(value));
-  }
-
+  numberState = __path("numberState", 1);
+  arrayState = __path("arrayState", [1, 2, 3]);
+  sumState = __path("sumState", 1 + 2);
+  objState = __path("objState", {
+    state: 1
+  });
 }
 
 const __contract = new A();

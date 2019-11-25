@@ -392,14 +392,11 @@ class IceTea {
     const name = node.key.name || ('#' + node.key.id.name)
     const wrap = template.smart(`
       class noname {
-        get NAME() {
-          return __proxyState$Get("NAME", DEFAULT);
-        }
-        set NAME(value) {
-          this.setState("NAME", __proxyState$Unwrap(value));
-        }
+        NAME = __path('NAME', DEFAULT)
       }
-    `)
+    `, {
+      plugins: ['classProperties']
+    })
     path.replaceWithMultiple(wrap({
       NAME: name,
       DEFAULT: node.value

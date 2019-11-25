@@ -13,21 +13,8 @@ test('typed state', () => {
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class Typed {
-  get state() {
-    return __proxyState$Get("state");
-  }
-
-  set state(value) {
-    this.setState("state", __proxyState$Unwrap(value));
-  }
-
-  get #state() {
-    return __proxyState$Get("#state");
-  }
-
-  set #state(value) {
-    this.setState("#state", __proxyState$Unwrap(value));
-  }
+  state = __path("state");
+  #state = __path("#state");
 
   test(arg1: number = 1, arg2: string = null): void {}
 
@@ -74,13 +61,7 @@ test('address state', () => {
   src = babelify(src, [plugin])
   src = babelify(src, [flowPlugin])
   expect(src).toBe(`class AddressTest {
-  get who() {
-    return __proxyState$Get("who");
-  }
-
-  set who(value) {
-    this.setState("who", __proxyState$Unwrap(value));
-  }
+  who = __path("who");
 
   withdraw(who) {}
 
