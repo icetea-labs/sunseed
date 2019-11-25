@@ -1,11 +1,12 @@
 {
   "name": "@iceteachain/sunseed",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Compile djs to raw js for deploying on Icetea Blockchain.",
   "main": "index.js",
   "browser": "dist/index.js",
   "scripts": {
     "build": "babel src --out-dir dist",
+    "install": "npm run build",
     "test": "jest --coverage",
     "lint": "standard",
     "fix": "standard --fix"
@@ -52,7 +53,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run build"
+      "pre-commit": "npm run lint"
     }
   },
   "jest": {
