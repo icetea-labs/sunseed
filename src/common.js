@@ -1,6 +1,6 @@
 const validate = require('validate-npm-package-name')
 
-exports.plugins = [
+module.exports.plugins = [
   'decorators-legacy',
   'classProperties',
   'flow',
@@ -26,11 +26,11 @@ exports.plugins = [
   'throwExpressions'
 ]
 
-exports.isHttp = (value) => {
+module.exports.isHttp = (value) => {
   return value.startsWith('http://') || value.startsWith('https://')
 }
 
-exports.isNodeModule = (value) => {
+module.exports.isNodeModule = (value) => {
   const { validForNewPackages, validForOldPackages } = validate(value)
   return validForNewPackages || validForOldPackages
 }
@@ -40,28 +40,28 @@ let whiteListModules = [
   'assert', 'buffer', 'crypto', 'querystring', 'stream', 'string_decoder', 'url', 'util', 'create-hash'
 ]
 
-exports.isWhitelistModule = (value) => {
+module.exports.isWhitelistModule = (value) => {
   return whiteListModules.some(element => {
     return value === element || value.startsWith(`${element}/`)
   })
 }
 
-exports.getWhiteListModules = () => {
+module.exports.getWhiteListModules = () => {
   return whiteListModules
 }
 
-exports.setWhiteListModules = (modules) => {
+module.exports.setWhiteListModules = (modules) => {
   whiteListModules = modules
 }
 
-exports.addWhiteListModule = (module) => {
+module.exports.addWhiteListModule = (module) => {
   if (whiteListModules.includes(module)) {
     return
   }
   whiteListModules.push(module)
 }
 
-exports.removeWhiteListModule = (module) => {
+module.exports.removeWhiteListModule = (module) => {
   whiteListModules = whiteListModules.filter(whitelist => (whitelist !== module))
 }
 

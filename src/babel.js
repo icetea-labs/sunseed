@@ -174,7 +174,6 @@ class IceTea {
       throw this.buildError(`Only ${allowDecorators.join(', ')} are valid for a class field.`, node)
     }
 
-    const states = this.findDecorators(node, 'state')
     const internals = this.findDecorators(node, 'internal')
     const name = node.key.name || ('#' + node.key.id.name) // private property does not have key.name
 
@@ -189,20 +188,7 @@ class IceTea {
       }
     }
 
-    if (states.length && node.value && !this.isConstant(node.value) && !isMethod(node)) {
-      const klassPath = path.parentPath.parentPath
-      const onDeploy = this.findOrCreateOnDeployed(klassPath)
-      const fn = template.smart(`
-        this.NAME.value(DEFAULT)
-      `)
-      onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
-        NAME: name,
-        DEFAULT: node.value
-      }))
-      this.onDeployedPivot += 1
-    }
-
-    if (states.length > 0) {
+    if (this.isState(node)) {
       const typeOfNode = typeOf(node)
       if (FORBIDDEN_STATE_TYPES.includes(typeOfNode)) {
         throw this.buildError(`${typeOfNode} cannot be marked as @state.`, node)
@@ -218,6 +204,19 @@ class IceTea {
         throw this.buildError(`${name} cannot be marked with both @state and @pure.`, node)
       }
 
+      if (!this.isConstant(node.value)) {
+        const klassPath = path.parentPath.parentPath
+        const onDeploy = this.findOrCreateOnDeployed(klassPath)
+        const fn = template.smart(`
+          this.NAME.value(DEFAULT)
+        `)
+        onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
+          NAME: name,
+          DEFAULT: node.value
+        }))
+        this.onDeployedPivot += 1
+      }
+
       this.wrapState(path, this.isConstant(node.value))
 
       if (!this.metadata[name]) {
@@ -231,9 +230,11 @@ class IceTea {
           fieldType: getTypeName(node.typeAnnotation)
         }
       }
+
       return
     }
 
+    // TODO: isDependent instead of Not constant
     if (!this.isConstant(node.value) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
       const onDeploy = this.findOrCreateOnDeployed(klassPath)
@@ -489,6 +490,11 @@ class IceTea {
       })
     }
     return false
+  }
+
+  isState (node) {
+    const states = this.findDecorators(node, 'state')
+    return states.length > 0
   }
 
   findOrCreateOnDeployed (klassPath) {
