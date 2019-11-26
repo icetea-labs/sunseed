@@ -64,3 +64,21 @@ exports.addWhiteListModule = (module) => {
 exports.removeWhiteListModule = (module) => {
   whiteListModules = whiteListModules.filter(whitelist => (whitelist !== module))
 }
+
+module.exports.typeOf = (node) => {
+  if (!node) {
+    return 'undefined'
+  }
+  const type = node.type
+  const valueType = node.value && node.value.type
+  if (['ClassMethod', 'ClassPrivateMethod'].includes(type) || ['FunctionExpression', 'ArrowFunctionExpression'].includes(valueType)) {
+    return 'function'
+  }
+  if (valueType === 'CallExpression' && node.value.callee && node.value.callee.name === 'Symbol') {
+    return 'symbol'
+  }
+  if (valueType === 'NewExpression' && node.value.callee && node.value.callee.name === 'WeakMap') {
+    return 'weakmap'
+  }
+  return 'object'
+}

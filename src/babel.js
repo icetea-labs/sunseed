@@ -1,6 +1,7 @@
 const template = require('@babel/template')
 const types = require('@babel/types')
-const { METHODS } = require('./constant')
+const { METHODS, FORBIDDEN_STATE_TYPES } = require('./constant')
+const { typeOf } = require('./common')
 let numberOfContracts = 0
 let contractName = ''
 let metadata = {}
@@ -214,8 +215,9 @@ class IceTea {
     }
 
     if (states.length > 0) {
-      if (isMethod(node)) {
-        throw this.buildError('Function cannot be marked as @state.', node)
+      const typeOfNode = typeOf(node)
+      if (FORBIDDEN_STATE_TYPES.includes(typeOfNode)) {
+        throw this.buildError(`${typeOfNode} cannot be marked as @state.`, node)
       }
 
       const indents = this.findMethodDefinition(this.klass, name)
