@@ -120,11 +120,12 @@ module.exports = function ({ types: t }) {
 
 class IceTea {
   constructor (types) {
-    this.types = types
-    this[METHODS.__ON_DEPLOYED] = 0
+    this.types = types // babel types
+    this[METHODS.__ON_DEPLOYED] = 0 // count __on_deployed
     this.className = ''
     this.metadata = {}
     this.klass = undefined
+    this.onDeployedPivot = 0 // appending state in exist ondeploy
   }
 
   classDeclaration (path) {
@@ -190,28 +191,15 @@ class IceTea {
 
     if (states.length && node.value && !this.isConstant(node.value) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
-      let onDeploy = this.findMethod(klassPath.node, METHODS.__ON_DEPLOYED)
-      if (!onDeploy) {
-        // class noname is only used for valid syntax
-        const fn = template.smart(`
-          class noname {
-            ${METHODS.__ON_DEPLOYED} () {}
-          }
-        `)
-        klassPath.node.body.body.unshift(...fn().body.body)
-        onDeploy = klassPath.node.body.body[0]
-        this.metadata[METHODS.__ON_DEPLOYED] = {
-          type: 'ClassMethod',
-          decorators: ['payable']
-        }
-      }
+      const onDeploy = this.findOrCreateOnDeployed(klassPath)
       const fn = template.smart(`
         this.NAME.value(DEFAULT)
       `)
-      onDeploy.body.body.push(fn({
+      onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
         NAME: name,
         DEFAULT: node.value
       }))
+      this.onDeployedPivot += 1
     }
 
     if (states.length > 0) {
@@ -248,26 +236,13 @@ class IceTea {
 
     if (!this.isConstant(node.value) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
-      let onDeploy = this.findMethod(klassPath.node, METHODS.__ON_DEPLOYED)
-      if (!onDeploy) {
-        // class noname is only used for valid syntax
-        const fn = template.smart(`
-          class noname {
-            ${METHODS.__ON_DEPLOYED} () {}
-          }
-        `)
-        klassPath.node.body.body.unshift(...fn().body.body)
-        onDeploy = klassPath.node.body.body[0]
-        this.metadata[METHODS.__ON_DEPLOYED] = {
-          type: 'ClassMethod',
-          decorators: ['payable']
-        }
-      }
+      const onDeploy = this.findOrCreateOnDeployed(klassPath)
       const fn = template.smart('this.PROPERTY = VALUE')
-      onDeploy.body.body.push(fn({
+      onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
         PROPERTY: name,
         VALUE: node.value
       }))
+      this.onDeployedPivot += 1
 
       const property = template.smart(`NAME = msg.name === '${METHODS.__ON_DEPLOYED}' ? undefined : VALUE`)
       path.replaceWith(property({
@@ -514,5 +489,25 @@ class IceTea {
       })
     }
     return false
+  }
+
+  findOrCreateOnDeployed (klassPath) {
+    let onDeploy = this.findMethod(klassPath.node, METHODS.__ON_DEPLOYED)
+    if (!onDeploy) {
+      // class noname is only used for valid syntax
+      const fn = template.smart(`
+          class noname {
+            ${METHODS.__ON_DEPLOYED} () {}
+          }
+        `)
+      klassPath.node.body.body.unshift(...fn().body.body)
+      onDeploy = klassPath.node.body.body[0]
+      this.metadata[METHODS.__ON_DEPLOYED] = {
+        type: 'ClassMethod',
+        decorators: ['payable']
+      }
+      this.onDeployedPivot = 0
+    }
+    return onDeploy
   }
 }

@@ -87,27 +87,29 @@ test('non constant state init', () => {
   let src = `
     @contract class A {
       @state property = Math.PI
-      xyz = property.value()
+      xyz = this.property.value()
+
+      constructor() {
+        this.x = 1
+      }
     }
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
+  property = __path("property");
+  xyz = msg.name === '__on_deployed' ? undefined : this.property.value();
+
   __on_deployed() {
     this.property.value(Math.PI);
-    this.xyz = property.value();
+    this.xyz = this.property.value();
+    this.x = 1;
   }
 
-  property = __path("property");
-  xyz = msg.name === '__on_deployed' ? undefined : property.value();
 }
 
 const __contract = new A();
 
 const __metadata = {
-  __on_deployed: {
-    type: "ClassMethod",
-    decorators: ["payable"]
-  },
   property: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
@@ -117,6 +119,12 @@ const __metadata = {
     type: "ClassProperty",
     decorators: ["internal"],
     fieldType: "any"
+  },
+  __on_deployed: {
+    type: "ClassMethod",
+    decorators: ["view"],
+    returnType: "any",
+    params: []
   }
 };`)
 })
