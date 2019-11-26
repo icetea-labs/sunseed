@@ -235,7 +235,7 @@ class IceTea {
     }
 
     // TODO: isDependent instead of Not constant
-    if (!this.isConstant(node.value) && !isMethod(node)) {
+    if (this.isStateDependent(path) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
       const onDeploy = this.findOrCreateOnDeployed(klassPath)
       const fn = template.smart('this.PROPERTY = VALUE')
@@ -495,6 +495,29 @@ class IceTea {
   isState (node) {
     const states = this.findDecorators(node, 'state')
     return states.length > 0
+  }
+
+  isStateDependent (path) {
+    let isDependent = false
+    path.traverse({
+      CallExpression (path) {
+        const { node } = path
+        if (!node.callee || !node.callee.property || !node.callee.object || !node.callee.object.object) {
+          return
+        }
+        if (node.callee.type !== 'MemberExpression') {
+          return
+        }
+        if (node.callee.property.name !== 'value') {
+          return
+        }
+        if (node.callee.object.object.type !== 'ThisExpression') {
+          return
+        }
+        isDependent = true
+      }
+    })
+    return isDependent
   }
 
   findOrCreateOnDeployed (klassPath) {
