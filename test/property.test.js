@@ -68,6 +68,28 @@ test('not use function property with state', () => {
   }).toThrow(SyntaxError)
 })
 
+test('not use Symbol with state', () => {
+  let src = `
+    @contract class A {
+      @state symbol = Symbol()
+    }
+  `
+  expect(() => {
+    src = babelify(src, [plugin])
+  }).toThrow(SyntaxError)
+})
+
+test('not use WeakMap with state', () => {
+  let src = `
+    @contract class A {
+      @state map = new WeakMap()
+    }
+  `
+  expect(() => {
+    src = babelify(src, [plugin])
+  }).toThrow(SyntaxError)
+})
+
 test('not use private function with state', () => {
   let src = `
     @contract class A {

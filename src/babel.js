@@ -234,7 +234,6 @@ class IceTea {
       return
     }
 
-    // TODO: isDependent instead of Not constant
     if (this.isStateDependent(path) && !isMethod(node)) {
       const klassPath = path.parentPath.parentPath
       const onDeploy = this.findOrCreateOnDeployed(klassPath)
@@ -488,6 +487,17 @@ class IceTea {
       return value.properties && value.properties.every(property => {
         return property.key.type !== 'TemplateLiteral' && this.isConstant(property.value)
       })
+    }
+    if (['FunctionExpression', 'ArrowFunctionExpression'].includes(value.type)) {
+      const { body } = value
+      if (body.type === 'BlockStatement') {
+        const returnStatement = body.body.find(block => block.type === 'ReturnStatement')
+        if (!returnStatement) {
+          return this.isConstant(returnStatement)
+        }
+        return this.isConstant(returnStatement.argument)
+      }
+      return this.isConstant(body)
     }
     return false
   }
