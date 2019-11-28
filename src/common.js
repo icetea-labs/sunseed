@@ -82,3 +82,5 @@ module.exports.typeOf = (node) => {
   }
   return 'object'
 }
+
+module.exports.isNode = () => typeof process !== 'undefined' && process.versions != null && process.versions.node != null

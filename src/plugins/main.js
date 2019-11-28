@@ -1,7 +1,8 @@
 const template = require('@babel/template')
 const types = require('@babel/types')
-const { METHODS, FORBIDDEN_STATE_TYPES } = require('./constant')
-const { typeOf } = require('./common')
+const { METHODS, FORBIDDEN_STATE_TYPES } = require('../constant')
+const { typeOf } = require('../common')
+
 let numberOfContracts = 0
 let contractName = ''
 let metadata = {}
