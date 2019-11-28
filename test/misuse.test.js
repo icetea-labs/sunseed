@@ -111,7 +111,7 @@ test('only one @onreceive per class', () => {
 })
 
 test('only js and json, weak way', () => {
-  let src = `
+  const src = `
     const test = require('./misc/test.node')
     @contract class A {}
   `

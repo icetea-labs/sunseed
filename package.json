@@ -1,11 +1,12 @@
 {
   "name": "@iceteachain/sunseed",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Compile djs to raw js for deploying on Icetea Blockchain.",
   "main": "index.js",
   "browser": "dist/index.js",
   "scripts": {
     "build": "babel src --out-dir dist",
+    "install": "npm run build",
     "test": "jest --coverage",
     "lint": "standard",
     "fix": "standard --fix"
@@ -21,15 +22,15 @@
   },
   "homepage": "https://github.com/TradaTech/sunseed#readme",
   "dependencies": {
-    "@babel/core": "^7.7.2",
-    "@babel/parser": "^7.7.3",
-    "@babel/plugin-transform-flow-strip-types": "^7.6.3",
-    "@babel/plugin-transform-runtime": "^7.6.2",
-    "@babel/preset-env": "^7.7.1",
-    "@babel/runtime": "^7.7.2",
-    "@babel/template": "^7.7.0",
-    "@babel/traverse": "^7.7.2",
-    "@babel/types": "^7.7.2",
+    "@babel/core": "^7.7.4",
+    "@babel/parser": "^7.7.4",
+    "@babel/plugin-transform-flow-strip-types": "^7.7.4",
+    "@babel/plugin-transform-runtime": "^7.7.4",
+    "@babel/preset-env": "^7.7.4",
+    "@babel/runtime": "^7.7.4",
+    "@babel/template": "^7.7.4",
+    "@babel/traverse": "^7.7.4",
+    "@babel/types": "^7.7.4",
     "axios": "^0.19.0",
     "node-fetch": "^2.6.0",
     "prettier": "^1.19.1",
@@ -37,8 +38,9 @@
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.7.0",
+    "@babel/cli": "^7.7.4",
     "jest": "^24.9.0",
+    "moment": "^2.24.0",
     "standard": "^14.3.1"
   },
   "standard": {
@@ -52,7 +54,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run build"
+      "pre-commit": "npm run lint"
     }
   },
   "jest": {

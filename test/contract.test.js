@@ -45,8 +45,19 @@ test('state', () => {
     }
   `
   src = babelify(src, [plugin])
-  src = Terser.minify(src).code
-  expect(src).toBe('class A{get property(){const e=this.getState("property");if(\"object\"!=typeof e)return e;const t=this.setState,r={get(e,t,o){const p=Object.getOwnPropertyDescriptor(e,t),n=Reflect.get(e,t,o);return(!p||p.writable||p.configurable)&&"object"==typeof n?new Proxy(n,r):n},defineProperty(r,o,p){const n=Reflect.defineProperty(r,o,p);return t("property",e),n},deleteProperty(r,o){const p=Reflect.deleteProperty(r,o);return t("property",e),p}};return new Proxy(e,r)}set property(e){this.setState("property",e)}}const __contract=new A,__metadata={property:{type:"ClassProperty",decorators:["state","internal"],fieldType:"any"}};')
+  expect(src).toBe(`class A {
+  property = __path("property");
+}
+
+const __contract = new A();
+
+const __metadata = {
+  property: {
+    type: "ClassProperty",
+    decorators: ["state", "internal"],
+    fieldType: "any"
+  }
+};`)
 })
 
 test('non constant', () => {
@@ -76,53 +87,22 @@ test('non constant state init', () => {
   let src = `
     @contract class A {
       @state property = Math.PI
+      xyz = this.property.value()
+
+      constructor() {
+        this.x = 1
+      }
     }
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
+  property = __path("property");
+  xyz = msg.name === '__on_deployed' ? undefined : this.property.value();
+
   __on_deployed() {
-    this.property = Math.PI;
-  }
-
-  get property() {
-    const state = this.getState("property", Math.PI);
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("property", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("property", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
-  }
-
-  set property(value) {
-    this.setState("property", value);
+    this.property.value(Math.PI);
+    this.xyz = this.property.value();
+    this.x = 1;
   }
 
 }
@@ -130,14 +110,21 @@ test('non constant state init', () => {
 const __contract = new A();
 
 const __metadata = {
-  __on_deployed: {
-    type: "ClassMethod",
-    decorators: ["payable"]
-  },
   property: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
     fieldType: "any"
+  },
+  xyz: {
+    type: "ClassProperty",
+    decorators: ["internal"],
+    fieldType: "any"
+  },
+  __on_deployed: {
+    type: "ClassMethod",
+    decorators: ["view"],
+    returnType: "any",
+    params: []
   }
 };`)
 })
@@ -191,7 +178,7 @@ test('whitelist special', async () => {
 })
 
 test('prefer local module', async () => {
-  let src = `
+  const src = `
     const moment = require('moment@local')
     @contract class A {
       @pure test() { return moment().format() }
@@ -226,7 +213,7 @@ test('inherit contract', async () => {
   let src = `
     class A {
       constructor() { console.log('A') }
-      @state state: number 
+      @state state: number
     }
     @contract class B extends A {
       constructor() {
@@ -242,47 +229,7 @@ test('inherit contract', async () => {
     console.log('A');
   }
 
-  get state() {
-    const state = this.getState("state");
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("state", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("state", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
-  }
-
-  set state(value) {
-    this.setState("state", value);
-  }
-
+  state = __path("state");
 }
 
 class B extends A {

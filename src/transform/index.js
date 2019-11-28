@@ -22,7 +22,7 @@ exports.transform = async (src, context = '/', project = null, options = {}) => 
     sourceType: 'module',
     plugins
   })
-  let requires = {}
+  const requires = {}
 
   traverse(parsed, {
     CallExpression: ({ node }) => {
@@ -62,10 +62,10 @@ exports.transform = async (src, context = '/', project = null, options = {}) => 
       if (!['.js', '.json'].includes(path.extname(value))) {
         throw new Error('"require" supports only .js and .json files.')
       }
-      const data = (await axios.get(url.resolve(context, value))).data
+      const data = (await axios.get(url.URL(value, context))).data
       if (typeof data === 'string') {
         // try to parse json string
-        requires[value] = await exports.transform(data, url.resolve(context, value), null, options)
+        requires[value] = await exports.transform(data, url.URL(value, context), null, options)
       } else {
         requires[value] = data
       }
