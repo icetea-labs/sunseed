@@ -37,6 +37,7 @@
     "prettier": "^1.19.1",
     "tempy": "^0.3.0",
     "terser": "^4.4.0",
+    "through": "^2.3.8",
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {

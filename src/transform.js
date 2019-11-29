@@ -115,7 +115,7 @@ async function transformUseFs (src, dir, requires, remote) {
 
 function bundle (filepath, ignores) {
   return new Promise((resolve, reject) => {
-    const bundle = browserify(filepath).external(ignores).bundle()
+    const bundle = browserify(filepath, { node: true, builtins: false, ignoreMissing: true }).external(ignores).bundle()
     bundle.on('error', reject)
     const tmpfile = tempy.directory() + '/.tmp-browserify-' + Math.random().toFixed(20).slice(2)
     bundle.pipe(fs.createWriteStream(tmpfile))
