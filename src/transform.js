@@ -11,6 +11,8 @@ const template = require('@babel/template')
 const browserify = require('browserify')
 const { isNode, plugins, getWhiteListModules, isHttp, isNodeModule } = require('./common')
 const babelify = require('./babelify')
+const browserifyPlugin = require('./plugins/browserify')
+const makeEntryWrapper = require('./entryWrapper')
 const makeWrapper = require('./wrapper')
 
 const transform = async (src, project, options) => {
@@ -37,12 +39,12 @@ const transform = async (src, project, options) => {
   const dir = tempy.directory()
 
   if (isNode()) {
-    src = await transformUseFs(src, dir, requires, remote)
+    src = await transformUsingFs(src, dir, requires, remote)
   }
   return src
 }
 
-async function transformUseFs (src, dir, requires, remote) {
+async function transformUsingFs (src, dir, requires, remote) {
   const ignores = getWhiteListModules()
   await Promise.all(Object.keys(requires).map(async value => {
     if (remote && remote[value]) {
@@ -94,7 +96,7 @@ async function transformUseFs (src, dir, requires, remote) {
     }
   }])
 
-  src = makeWrapper(src).trim()
+  src = makeEntryWrapper(src).trim()
 
   const tmpfile = '.tmp-sunseed-' + Math.random().toFixed(20).slice(2) + '.js'
   await fsp.writeFile(`./${tmpfile}`, src)
@@ -109,6 +111,10 @@ async function transformUseFs (src, dir, requires, remote) {
   for (const key in requires) {
     src = src.replace(new RegExp(requires[key], 'g'), key)
   }
+
+  src = babelify(src, [browserifyPlugin])
+
+  src = makeWrapper(src).trim()
 
   return src
 }

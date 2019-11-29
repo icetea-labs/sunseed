@@ -7,7 +7,7 @@ const babelify = require('./babelify')
 const mainPlugin = require('./plugins/main')
 const import2require = require('./plugins/import2require')
 const transform = require('./transform')
-const makeWrapper = require('./wrapper')
+const makeWrapper = require('./entryWrapper')
 const { getWhiteListModules, setWhiteListModules, addWhiteListModule, removeWhiteListModule } = require('./common')
 
 const transpile = async (src, options = {}) => {
