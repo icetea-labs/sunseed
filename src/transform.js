@@ -16,7 +16,7 @@ const makeEntryWrapper = require('./entryWrapper')
 const makeWrapper = require('./wrapper')
 
 const transform = async (src, project, options) => {
-  const { remote } = options
+  const { remote, basedir = '.' } = options
   const parsed = babelParser.parse(src, {
     sourceType: 'module',
     plugins
@@ -39,23 +39,14 @@ const transform = async (src, project, options) => {
   const dir = tempy.directory()
 
   if (isNode()) {
-    src = await transformUsingFs(src, dir, requires, remote)
+    src = await transformUsingFs(src, dir, requires, remote, basedir)
   }
   return src
 }
 
-async function transformUsingFs (src, dir, requires, remote) {
+async function transformUsingFs (src, dir, requires, remote, basedir) {
   const ignores = getWhiteListModules()
   await Promise.all(Object.keys(requires).map(async value => {
-    if (remote && remote[value]) {
-      delete requires[value]
-      ignores.push(value)
-      return true
-    }
-    if (isNodeModule(value)) {
-      delete requires[value]
-      return true
-    }
     if (isHttp(value)) {
       const data = (await axios.get(value)).data
       const tmpdir = '.tmp-dir-' + Math.random().toFixed(20).slice(2)
@@ -67,6 +58,10 @@ async function transformUsingFs (src, dir, requires, remote) {
       requires[value] = filepath
       return true
     }
+    if (remote && remote[value]) {
+      ignores.push(value)
+    }
+    delete requires[value]
     return true
   }))
 
@@ -99,12 +94,13 @@ async function transformUsingFs (src, dir, requires, remote) {
   src = makeEntryWrapper(src).trim()
 
   const tmpfile = '.tmp-sunseed-' + Math.random().toFixed(20).slice(2) + '.js'
-  await fsp.writeFile(`./${tmpfile}`, src)
+  const tmpfilepath = `${basedir}/${tmpfile}`
+  await fsp.writeFile(tmpfilepath, src)
   try {
-    src = (await bundle(`./${tmpfile}`, ignores)).toString()
-    await fsp.unlink(`./${tmpfile}`)
+    src = (await bundle(tmpfilepath, ignores, basedir)).toString()
+    await fsp.unlink(tmpfilepath)
   } catch (err) {
-    await fsp.unlink(`./${tmpfile}`)
+    await fsp.unlink(tmpfilepath)
     throw err
   }
 
@@ -119,9 +115,9 @@ async function transformUsingFs (src, dir, requires, remote) {
   return src
 }
 
-function bundle (filepath, ignores) {
+function bundle (filepath, ignores, basedir) {
   return new Promise((resolve, reject) => {
-    const bundle = browserify(filepath, { node: true, builtins: false, ignoreMissing: true }).external(ignores).bundle()
+    const bundle = browserify(filepath, { node: true, builtins: false, basedir }).external(ignores).bundle()
     bundle.on('error', reject)
     const tmpfile = tempy.directory() + '/.tmp-browserify-' + Math.random().toFixed(20).slice(2)
     bundle.pipe(fs.createWriteStream(tmpfile))
