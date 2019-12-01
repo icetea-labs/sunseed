@@ -1,6 +1,6 @@
 const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
-const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const plugin = require('../src/plugins/main')
+const babelify = require('../src/babelify')
 
 test('typed state', () => {
   let src = `

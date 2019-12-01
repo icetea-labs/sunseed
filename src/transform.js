@@ -9,13 +9,13 @@ const axios = require('axios')
 const mkdirp = require('mkdirp')
 const template = require('@babel/template')
 const browserify = require('browserify')
-const { isNode, plugins, getWhiteListModules, isHttp, isNodeModule } = require('./common')
+const { isNode, plugins, getWhiteListModules, isHttp } = require('./common')
 const babelify = require('./babelify')
 const browserifyPlugin = require('./plugins/browserify')
 const makeEntryWrapper = require('./entryWrapper')
 const makeWrapper = require('./wrapper')
 
-const transform = async (src, project, options) => {
+const transform = async (src, project = null, options = {}) => {
   const { remote, basedir = '.' } = options
   const parsed = babelParser.parse(src, {
     sourceType: 'module',
@@ -54,7 +54,11 @@ async function transformUsingFs (src, dir, requires, remote, basedir) {
       const filename = path.basename(parsed.pathname)
       mkdirp.sync(`${dir}/${tmpdir}`)
       const filepath = `${dir}/${tmpdir}/${filename}`
-      await fsp.writeFile(filepath, data)
+      if (typeof data === 'object') {
+        await fsp.writeFile(filepath, JSON.stringify(data))
+      } else {
+        await fsp.writeFile(filepath, data)
+      }
       requires[value] = filepath
       return true
     }

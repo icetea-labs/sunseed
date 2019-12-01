@@ -1,7 +1,7 @@
-const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const plugin = require('../src/plugins/main')
+const babelify = require('../src/babelify')
 const { transpile } = require('../src')
-const makeWrapper = require('../src/wrapper')
+const makeWrapper = require('../src/entryWrapper')
 
 test('pure property', () => {
   let src = `
