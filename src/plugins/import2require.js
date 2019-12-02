@@ -9,13 +9,13 @@ class IceTea {
     const node = klass.node
     let source = `require('${node.source.value}')`
     const specifiers = node.specifiers
-    let lefts = []
+    const lefts = []
     let hasDefault = false
 
     const require1 = template.smart(`
       const LOCAL = SOURCE
     `)
-    for (let specifier of specifiers) {
+    for (const specifier of specifiers) {
       if (specifier.type === 'ImportNamespaceSpecifier' || specifier.type === 'ImportDefaultSpecifier') {
         klass.replaceWith(
           require1({
@@ -31,7 +31,7 @@ class IceTea {
       }
     }
     if (lefts.length > 0) {
-      let tmp = '{' + lefts.map(left => `${left[1]}: ${left[0]}`).join(', ') + '}'
+      const tmp = '{' + lefts.map(left => `${left[1]}: ${left[0]}`).join(', ') + '}'
       const require2 = template.smart(`
         const ${tmp} = SOURCE
       `)

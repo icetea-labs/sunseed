@@ -1,5 +1,8 @@
 const template = require('@babel/template')
 const types = require('@babel/types')
+const { METHODS, FORBIDDEN_STATE_TYPES } = require('../constant')
+const { typeOf } = require('../common')
+
 let numberOfContracts = 0
 let contractName = ''
 let metadata = {}
@@ -118,11 +121,12 @@ module.exports = function ({ types: t }) {
 
 class IceTea {
   constructor (types) {
-    this.types = types
-    this.__on_deployed = 0
+    this.types = types // babel types
+    this[METHODS.__ON_DEPLOYED] = 0 // count __on_deployed
     this.className = ''
     this.metadata = {}
     this.klass = undefined
+    this.onDeployedPivot = 0 // appending state in exist ondeploy
   }
 
   classDeclaration (path) {
@@ -142,7 +146,7 @@ class IceTea {
     const ctor = this.findConstructor(klass)
     if (ctor) {
       ctor.kind = 'method'
-      ctor.key.name = '__on_deployed'
+      ctor.key.name = METHODS.__ON_DEPLOYED
       this.replaceSuper(ctor)
     }
 
@@ -171,7 +175,6 @@ class IceTea {
       throw this.buildError(`Only ${allowDecorators.join(', ')} are valid for a class field.`, node)
     }
 
-    const states = this.findDecorators(node, 'state')
     const internals = this.findDecorators(node, 'internal')
     const name = node.key.name || ('#' + node.key.id.name) // private property does not have key.name
 
@@ -186,40 +189,10 @@ class IceTea {
       }
     }
 
-    if (states.length && node.value && !this.isConstant(node.value) && !isMethod(node)) {
-      const klassPath = path.parentPath.parentPath
-      let onDeploy = this.findMethod(klassPath.node, '__on_deployed')
-      if (!onDeploy) {
-        // class noname is only used for valid syntax
-        const fn = template.smart(`
-          class noname {
-            __on_deployed () {}
-          }
-        `)
-        klassPath.node.body.body.unshift(...fn().body.body)
-        onDeploy = klassPath.node.body.body[0]
-        this.metadata['__on_deployed'] = {
-          type: 'ClassMethod',
-          decorators: ['payable']
-        }
-      }
-      const fn = template.smart(`
-        this.NAME = DEFAULT
-      `)
-      onDeploy.body.body.unshift(fn({
-        NAME: name,
-        DEFAULT: node.value
-      }))
-
-      // initialization is already added to constructor
-      // if (states.length === 0) {
-      //   path.remove()
-      // }
-    }
-
-    if (states.length > 0) {
-      if (isMethod(node)) {
-        throw this.buildError('Function cannot be marked as @state.', node)
+    if (this.isState(node)) {
+      const typeOfNode = typeOf(node)
+      if (FORBIDDEN_STATE_TYPES.includes(typeOfNode)) {
+        throw this.buildError(`${typeOfNode} cannot be marked as @state.`, node)
       }
 
       const indents = this.findMethodDefinition(this.klass, name)
@@ -232,7 +205,20 @@ class IceTea {
         throw this.buildError(`${name} cannot be marked with both @state and @pure.`, node)
       }
 
-      this.wrapState(path)
+      if (!this.isConstant(node.value)) {
+        const klassPath = path.parentPath.parentPath
+        const onDeploy = this.findOrCreateOnDeployed(klassPath)
+        const fn = template.smart(`
+          this.NAME.value(DEFAULT)
+        `)
+        onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
+          NAME: name,
+          DEFAULT: node.value
+        }))
+        this.onDeployedPivot += 1
+      }
+
+      this.wrapState(path, this.isConstant(node.value))
 
       if (!this.metadata[name]) {
         const decoratorNames = decorators.map(decorator => decorator.expression.name)
@@ -245,7 +231,25 @@ class IceTea {
           fieldType: getTypeName(node.typeAnnotation)
         }
       }
+
       return
+    }
+
+    if (this.isStateDependent(path) && !isMethod(node)) {
+      const klassPath = path.parentPath.parentPath
+      const onDeploy = this.findOrCreateOnDeployed(klassPath)
+      const fn = template.smart('this.PROPERTY = VALUE')
+      onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
+        PROPERTY: name,
+        VALUE: node.value
+      }))
+      this.onDeployedPivot += 1
+
+      const property = template.smart(`NAME = msg.name === '${METHODS.__ON_DEPLOYED}' ? undefined : VALUE`)
+      path.replaceWith(property({
+        NAME: name,
+        VALUE: node.value
+      }))
     }
 
     if (!this.metadata[name]) {
@@ -255,22 +259,22 @@ class IceTea {
       }
 
       if (!isMethod(node)) {
-        this.metadata[name]['fieldType'] = getTypeName(node.typeAnnotation)
+        this.metadata[name].fieldType = getTypeName(node.typeAnnotation)
         if (decorators.length === 0) {
           if (name.startsWith('#')) { // private property
-            this.metadata[name]['decorators'].push('pure')
+            this.metadata[name].decorators.push('pure')
           } else {
-            this.metadata[name]['decorators'].push('internal')
+            this.metadata[name].decorators.push('internal')
           }
         }
       } else {
-        this.metadata[name]['returnType'] = getTypeName(node.value.returnType)
-        this.metadata[name]['params'] = getTypeParams(node.value.params)
+        this.metadata[name].returnType = getTypeName(node.value.returnType)
+        this.metadata[name].params = getTypeParams(node.value.params)
         if (decorators.length === 0) {
           if (name.startsWith('#')) { // private function
-            this.metadata[name]['decorators'].push('view')
+            this.metadata[name].decorators.push('view')
           } else {
-            this.metadata[name]['decorators'].push('internal')
+            this.metadata[name].decorators.push('internal')
           }
         }
       }
@@ -291,14 +295,14 @@ class IceTea {
     }
 
     const name = klass.key.name || ('#' + klass.key.id.name)
-    if (name === '__on_received') {
-      throw this.buildError('__on_received cannot be specified directly.', klass)
+    if (name === METHODS.__ON_RECEIVED) {
+      throw this.buildError(`${METHODS.__ON_RECEIVED} cannot be specified directly.`, klass)
     }
-    if (name === '__on_deployed') {
-      if (this.__on_deployed > 0) {
-        throw this.buildError('__on_deployed cannot be specified directly.', klass)
+    if (name === METHODS.__ON_DEPLOYED) {
+      if (this[METHODS.__ON_DEPLOYED] > 0) {
+        throw this.buildError(`${METHODS.__ON_DEPLOYED} cannot be specified directly.`, klass)
       }
-      this.__on_deployed += 1
+      this[METHODS.__ON_DEPLOYED] += 1
     }
     if (name.startsWith('#')) {
       const payables = this.findDecorators(klass, 'payable')
@@ -319,7 +323,7 @@ class IceTea {
         params: getTypeParams(klass.params)
       }
       if (decorators.length === 0) {
-        if (name.startsWith('#') || name === '__on_deployed') { // private method
+        if (name.startsWith('#') || name === METHODS.__ON_DEPLOYED) { // private method
           this.metadata[name].decorators.push('view')
         } else {
           this.metadata[name].decorators.push('internal')
@@ -333,10 +337,10 @@ class IceTea {
       if (payables.length === 0 && klass.body.body.length > 0) {
         throw this.buildError('Non-payable @onreceive function should have empty body.', klass)
       }
-      if (this.metadata['__on_received']) {
+      if (this.metadata[METHODS.__ON_RECEIVED]) {
         throw this.buildError('Only one @onreceive is allowed per class.', klass)
       }
-      this.metadata['__on_received'] = klass.key.name
+      this.metadata[METHODS.__ON_RECEIVED] = klass.key.name
     }
 
     this.deleteDecorators(klass, this.findDecorators(klass, ...METHOD_DECORATORS))
@@ -377,7 +381,7 @@ class IceTea {
       }
       if (body.expression.callee.type === 'Super') {
         const superTemplate = template.smart(`
-          super.__on_deployed(ARGUMENTS)
+          super.${METHODS.__ON_DEPLOYED}(ARGUMENTS)
         `)
         body = superTemplate({
           ARGUMENTS: body.expression.arguments
@@ -387,22 +391,19 @@ class IceTea {
     })
   }
 
-  wrapState (path) {
+  wrapState (path, useInitValue = true) {
     const { node } = path
     const name = node.key.name || ('#' + node.key.id.name)
     const wrap = template.smart(`
       class noname {
-        get NAME() {
-          return __proxyState$Get("NAME", DEFAULT);
-        }
-        set NAME(value) {
-          this.setState("NAME", __proxyState$Unwrap(value));
-        }
+        NAME = __path('NAME', DEFAULT)
       }
-    `)
+    `, {
+      plugins: ['classProperties']
+    })
     path.replaceWithMultiple(wrap({
       NAME: name,
-      DEFAULT: node.value
+      DEFAULT: useInitValue ? node.value : undefined
     }).body.body)
   }
 
@@ -468,6 +469,9 @@ class IceTea {
   }
 
   isConstant (value) {
+    if (value === null || value === undefined) {
+      return true
+    }
     const { types } = this
     if (types.isLiteral(value) && value.type !== 'TemplateLiteral') {
       return true
@@ -485,6 +489,65 @@ class IceTea {
         return property.key.type !== 'TemplateLiteral' && this.isConstant(property.value)
       })
     }
+    if (['FunctionExpression', 'ArrowFunctionExpression'].includes(value.type)) {
+      const { body } = value
+      if (body.type === 'BlockStatement') {
+        const returnStatement = body.body.find(block => block.type === 'ReturnStatement')
+        if (!returnStatement) {
+          return this.isConstant(returnStatement)
+        }
+        return this.isConstant(returnStatement.argument)
+      }
+      return this.isConstant(body)
+    }
     return false
+  }
+
+  isState (node) {
+    const states = this.findDecorators(node, 'state')
+    return states.length > 0
+  }
+
+  isStateDependent (path) {
+    let isDependent = false
+    path.traverse({
+      CallExpression (path) {
+        const { node } = path
+        if (!node.callee || !node.callee.property || !node.callee.object || !node.callee.object.object) {
+          return
+        }
+        if (node.callee.type !== 'MemberExpression') {
+          return
+        }
+        if (node.callee.property.name !== 'value') {
+          return
+        }
+        if (node.callee.object.object.type !== 'ThisExpression') {
+          return
+        }
+        isDependent = true
+      }
+    })
+    return isDependent
+  }
+
+  findOrCreateOnDeployed (klassPath) {
+    let onDeploy = this.findMethod(klassPath.node, METHODS.__ON_DEPLOYED)
+    if (!onDeploy) {
+      // class noname is only used for valid syntax
+      const fn = template.smart(`
+          class noname {
+            ${METHODS.__ON_DEPLOYED} () {}
+          }
+        `)
+      klassPath.node.body.body.unshift(...fn().body.body)
+      onDeploy = klassPath.node.body.body[0]
+      this.metadata[METHODS.__ON_DEPLOYED] = {
+        type: 'ClassMethod',
+        decorators: ['payable']
+      }
+      this.onDeployedPivot = 0
+    }
+    return onDeploy
   }
 }

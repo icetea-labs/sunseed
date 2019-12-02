@@ -2,10 +2,12 @@ const prettier = require('prettier/standalone')
 const plugins = [require('prettier/parser-babylon')]
 const Terser = require('terser')
 const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
-
-const plugin = require('./babel')
-const makeWrapper = require('./wrapper')
-const { transform, babelify } = require('./transform')
+const { isNode } = require('./common')
+const babelify = require('./babelify')
+const mainPlugin = require('./plugins/main')
+const import2require = require('./plugins/import2require')
+const transform = require('./transform')
+const makeWrapper = require('./entryWrapper')
 const { getWhiteListModules, setWhiteListModules, addWhiteListModule, removeWhiteListModule } = require('./common')
 
 const transpile = async (src, options = {}) => {
@@ -14,35 +16,31 @@ const transpile = async (src, options = {}) => {
     minifyOpts = {},
     prettier = false,
     prettierOpts = {},
-    context = '/',
-    buildOptions = {},
+    buildOpts = {},
     project // for studio support file, to keep deadline, TODO: remove if possible
   } = options
 
-  // The decorated plugins should append this, but for now we add here to simplify
-  // src += ';const __contract = new __contract_name();const __metadata = {}'
-  // then, babelify it
-  src = babelify(src, [plugin])
+  if (isNode() && project) {
+    throw new Error('options.project is only on browser')
+  }
 
-  // remove flow types
-  src = babelify(src, [flowPlugin])
+  src = babelify(src, [mainPlugin, flowPlugin, import2require])
 
-  // don't know, maybe babel not support decorators along to private property
-  src = await transform(src, context, project, buildOptions)
+  // browserify it
+  src = await transform(src, project, buildOpts)
 
-  // finally, wrap it
-  src = makeWrapper(src).trim()
-
-  // preparation for minified
+  // Minify need semi to work properly
   src = prettify(src, { semi: true })
 
   if (prettier) {
     src = prettify(src, prettierOpts)
   } else if (minify) {
-    src = doMinify(src, minifyOpts)
+    try {
+      src = doMinify(src, minifyOpts)
+    } catch (err) {
+      throw new Error(`Terser minify does not support some new node features, err=${err}`)
+    }
   }
-
-  // console.log(src)
 
   return src
 }
@@ -55,13 +53,7 @@ const simpleTranspile = (src, options = {}) => {
     prettierOpts = {}
   } = options
 
-  // The decorated plugins should append this, but for now we add here to simplify
-  // src += ';const __contract = new __contract_name();const __metadata = {}'
-  // then, babelify it
-  src = babelify(src, [plugin])
-
-  // remove flow types
-  src = babelify(src, [flowPlugin])
+  src = babelify(src, [mainPlugin, flowPlugin, import2require])
 
   // finally, wrap it
   src = makeWrapper(src).trim()

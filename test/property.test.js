@@ -1,7 +1,7 @@
-const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const plugin = require('../src/plugins/main')
+const babelify = require('../src/babelify')
 const { transpile } = require('../src')
-const makeWrapper = require('../src/wrapper')
+const makeWrapper = require('../src/entryWrapper')
 
 test('pure property', () => {
   let src = `
@@ -68,6 +68,28 @@ test('not use function property with state', () => {
   }).toThrow(SyntaxError)
 })
 
+test('not use Symbol with state', () => {
+  let src = `
+    @contract class A {
+      @state symbol = Symbol()
+    }
+  `
+  expect(() => {
+    src = babelify(src, [plugin])
+  }).toThrow(SyntaxError)
+})
+
+test('not use WeakMap with state', () => {
+  let src = `
+    @contract class A {
+      @state map = new WeakMap()
+    }
+  `
+  expect(() => {
+    src = babelify(src, [plugin])
+  }).toThrow(SyntaxError)
+})
+
 test('not use private function with state', () => {
   let src = `
     @contract class A {
@@ -80,19 +102,22 @@ test('not use private function with state', () => {
 })
 
 test('try transpile', async () => {
-  let src = `
-    @contract class A {
-      @state state = 1
-    }
-  `
-  let cannotMinSrc = `
+  const cannotMinStateSrc = `
+  @contract class A {
+    @state state = 1
+  }
+`
+
+  const cannotMinSrc = `
     @contract class A {
       @pure state = () => 1
     }
   `
 
-  await transpile(src, { prettier: true })
-  await transpile(src, { minify: true })
+  await transpile(cannotMinStateSrc, { prettier: true })
+  await transpile(cannotMinSrc, { prettier: true })
+  // TODO: wait for Terser support classProperties
+  await expect(transpile(cannotMinStateSrc, { minify: true })).rejects.toThrow(Error)
   await expect(transpile(cannotMinSrc, { minify: true })).rejects.toThrow(Error)
 })
 
@@ -107,172 +132,12 @@ test('getState default', async () => {
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
-  get numberState() {
-    const state = this.getState("numberState", 1);
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("numberState", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("numberState", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
-  }
-
-  set numberState(value) {
-    this.setState("numberState", value);
-  }
-
-  get arrayState() {
-    const state = this.getState("arrayState", [1, 2, 3]);
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("arrayState", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("arrayState", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
-  }
-
-  set arrayState(value) {
-    this.setState("arrayState", value);
-  }
-
-  get sumState() {
-    const state = this.getState("sumState", 1 + 2);
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("sumState", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("sumState", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
-  }
-
-  set sumState(value) {
-    this.setState("sumState", value);
-  }
-
-  get objState() {
-    const state = this.getState("objState", {
-      state: 1
-    });
-
-    if (typeof state !== "object") {
-      return state;
-    }
-
-    const setState = this.setState;
-    const handler = {
-      get(target, property, receiver) {
-        const desc = Object.getOwnPropertyDescriptor(target, property);
-        const value = Reflect.get(target, property, receiver);
-        if (desc && !desc.writable && !desc.configurable) return value;
-
-        if (typeof value === 'object') {
-          return new Proxy(value, handler);
-        }
-
-        return value;
-      },
-
-      defineProperty(target, property, descriptor) {
-        const result = Reflect.defineProperty(target, property, descriptor);
-        setState("objState", state);
-        return result;
-      },
-
-      deleteProperty(target, property) {
-        const result = Reflect.deleteProperty(target, property);
-        setState("objState", state);
-        return result;
-      }
-
-    };
-    return new Proxy(state, handler);
-  }
-
-  set objState(value) {
-    this.setState("objState", value);
-  }
-
+  numberState = __path("numberState", 1);
+  arrayState = __path("arrayState", [1, 2, 3]);
+  sumState = __path("sumState", 1 + 2);
+  objState = __path("objState", {
+    state: 1
+  });
 }
 
 const __contract = new A();

@@ -59,4 +59,8 @@ typings/
 
 # next.js build output
 .next
-.vscode
+.vscode/*
+!.vscode/settings.json
+
+# compiled javascript
+dist
