@@ -1,5 +1,5 @@
-const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const plugin = require('../src/plugins/main')
+const babelify = require('../src/babelify')
 
 describe('internal new feature', () => {
   test('some misuse situation', () => {

@@ -22,26 +22,29 @@
   },
   "homepage": "https://github.com/TradaTech/sunseed#readme",
   "dependencies": {
-    "@babel/core": "^7.7.4",
-    "@babel/parser": "^7.7.4",
-    "@babel/plugin-transform-flow-strip-types": "^7.7.4",
-    "@babel/plugin-transform-runtime": "^7.7.4",
-    "@babel/preset-env": "^7.7.4",
-    "@babel/runtime": "^7.7.4",
-    "@babel/template": "^7.7.4",
-    "@babel/traverse": "^7.7.4",
-    "@babel/types": "^7.7.4",
-    "axios": "^0.19.0",
+    "@babel/core": "^7.12.8",
+    "@babel/parser": "^7.12.7",
+    "@babel/plugin-transform-flow-strip-types": "^7.12.1",
+    "@babel/plugin-transform-runtime": "^7.12.1",
+    "@babel/preset-env": "^7.12.7",
+    "@babel/runtime": "^7.12.5",
+    "@babel/template": "^7.12.7",
+    "@babel/traverse": "^7.12.8",
+    "@babel/types": "^7.12.7",
+    "axios": "^0.19.2",
+    "browserify": "^17.0.0",
+    "mkdirp": "^1.0.4",
     "node-fetch": "^2.6.0",
     "prettier": "^1.19.1",
-    "terser": "^4.4.0",
+    "tempy": "^1.0.0",
+    "terser": "^4.8.0",
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.7.4",
+    "@babel/cli": "^7.12.8",
     "jest": "^24.9.0",
-    "moment": "^2.24.0",
-    "standard": "^14.3.1"
+    "moment": "^2.29.1",
+    "standard": "^14.3.4"
   },
   "standard": {
     "ignore": [

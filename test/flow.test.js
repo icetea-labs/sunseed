@@ -1,6 +1,6 @@
 const flowPlugin = require('@babel/plugin-transform-flow-strip-types')
-const plugin = require('../src/babel')
-const { babelify } = require('../src/transform')
+const plugin = require('../src/plugins/main')
+const babelify = require('../src/babelify')
 
 test('typed state', () => {
   let src = `
@@ -13,8 +13,8 @@ test('typed state', () => {
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class Typed {
-  state = __path("state");
-  #state = __path("#state");
+  state = define("state");
+  #state = define("#state");
 
   test(arg1: number = 1, arg2: string = null): void {}
 
@@ -61,7 +61,7 @@ test('address state', () => {
   src = babelify(src, [plugin])
   src = babelify(src, [flowPlugin])
   expect(src).toBe(`class AddressTest {
-  who = __path("who");
+  who = define("who");
 
   withdraw(who) {}
 

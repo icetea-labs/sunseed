@@ -1,7 +1,7 @@
 const template = require('@babel/template')
 const types = require('@babel/types')
-const { METHODS, FORBIDDEN_STATE_TYPES } = require('./constant')
-const { typeOf } = require('./common')
+const { METHODS, FORBIDDEN_STATE_TYPES } = require('../constant')
+const { typeOf } = require('../common')
 let numberOfContracts = 0
 let contractName = ''
 let metadata = {}
@@ -19,7 +19,7 @@ function isMethod (node) {
 }
 
 const SUPPORTED_TYPES = ['number', 'string', 'boolean', 'bigint', 'null', 'undefined',
-  'function', 'array', 'map', 'set', 'date', 'regexp', 'promise', 'address']
+  'function', 'array', 'map', 'set', 'date', 'regexp', 'promise', 'address', 'list', 'autolist']
 
 function concatUnique (a, b) {
   if (!Array.isArray(a)) {
@@ -48,7 +48,6 @@ function getTypeName (node, insideUnion) {
   const ta = insideUnion ? node : node.typeAnnotation
   const tn = ta.type
   if (!tn) return 'any'
-
   let result
   if (tn === 'Identifier') {
     result = ta.name
@@ -208,7 +207,7 @@ class IceTea {
         const klassPath = path.parentPath.parentPath
         const onDeploy = this.findOrCreateOnDeployed(klassPath)
         const fn = template.smart(`
-          this.NAME.value(DEFAULT)
+          this.NAME.set(DEFAULT)
         `)
         onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
           NAME: name,
@@ -393,9 +392,13 @@ class IceTea {
   wrapState (path, useInitValue = true) {
     const { node } = path
     const name = node.key.name || ('#' + node.key.id.name)
+    const fieldType = getTypeName(node.typeAnnotation)[0]
+    let defineType = 'define'
+    if (fieldType === 'list') defineType = 'defineList'
+    if (fieldType === 'autolist') defineType = 'defineAutoList'
     const wrap = template.smart(`
       class noname {
-        NAME = __path('NAME', DEFAULT)
+        NAME = ${defineType}('NAME', DEFAULT)
       }
     `, {
       plugins: ['classProperties']
@@ -518,7 +521,7 @@ class IceTea {
         if (node.callee.type !== 'MemberExpression') {
           return
         }
-        if (node.callee.property.name !== 'value') {
+        if (node.callee.property.name !== 'value' && node.callee.property.name !== 'get') {
           return
         }
         if (node.callee.object.object.type !== 'ThisExpression') {

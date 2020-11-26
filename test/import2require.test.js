@@ -1,5 +1,5 @@
-const importToRequire = require('../src/import2require')
-const { babelify } = require('../src/transform')
+const importToRequire = require('../src/plugins/import2require')
+const babelify = require('../src/babelify')
 
 test('pure property', () => {
   let src = `

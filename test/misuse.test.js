@@ -1,5 +1,6 @@
-const plugin = require('../src/babel')
-const { babelify, transform } = require('../src/transform')
+const plugin = require('../src/plugins/main')
+const babelify = require('../src/babelify')
+const transform = require('../src/transform')
 
 test('2 contract decorators error', () => {
   let src = `
