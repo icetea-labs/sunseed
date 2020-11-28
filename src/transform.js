@@ -121,10 +121,12 @@ async function transformUsingFs (src, dir, requires, remote, basedir) {
 function bundle (filepath, ignores, basedir) {
   return new Promise((resolve, reject) => {
     const bundle = browserify(filepath, { node: true, builtins: false, basedir }).external(ignores).bundle()
-    bundle.on('error', reject)
-    const tmpfile = tempy.directory() + '/.tmp-browserify-' + Math.random().toFixed(20).slice(2)
-    bundle.pipe(fs.createWriteStream(tmpfile))
-    bundle.on('end', () => {
+    const tmpfile = tempy.directory() + '/.tmp-browserify-' + Date.now()
+    const writeStream = fs.createWriteStream(tmpfile)
+
+    bundle.pipe(writeStream)
+    writeStream.on('finish', () => {
+      writeStream.close()
       fsp.readFile(tmpfile).then(resolve).catch(reject)
     })
   })

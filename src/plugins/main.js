@@ -207,7 +207,7 @@ class IceTea {
         const klassPath = path.parentPath.parentPath
         const onDeploy = this.findOrCreateOnDeployed(klassPath)
         const fn = template.smart(`
-          this.NAME.set(DEFAULT)
+          this.NAME.value(DEFAULT)
         `)
         onDeploy.body.body.splice(this.onDeployedPivot, 0, fn({
           NAME: name,

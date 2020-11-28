@@ -1,7 +1,6 @@
 const Terser = require('terser')
 const plugin = require('../src/plugins/main')
 const babelify = require('../src/babelify')
-const transform = require('../src/transform')
 
 test('constructor to deploy', () => {
   let src = `
@@ -130,7 +129,7 @@ test('non constant state init', () => {
   let src = `
     @contract class A {
       @state property = Math.PI
-      xyz = this.property.get()
+      xyz = this.property.value()
 
       constructor() {
         this.x = 1
@@ -140,11 +139,11 @@ test('non constant state init', () => {
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
   property = define("property");
-  xyz = msg.name === '__on_deployed' ? undefined : this.property.get();
+  xyz = msg.name === '__on_deployed' ? undefined : this.property.value();
 
   __on_deployed() {
-    this.property.set(Math.PI);
-    this.xyz = this.property.get();
+    this.property.value(Math.PI);
+    this.xyz = this.property.value();
     this.x = 1;
   }
 

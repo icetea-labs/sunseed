@@ -1,5 +1,5 @@
 const external = require('../src/external')
-const { babelify } = require('../src/transform')
+const babelify = require('../src/babelify')
 
 describe('external plugin', () => {
   test('require non string literal', () => {
