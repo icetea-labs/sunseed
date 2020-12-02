@@ -7,8 +7,7 @@ const { isNode } = require('./common')
 const babelify = require('./babelify')
 const mainPlugin = require('./plugins/main')
 const import2require = require('./plugins/import2require')
-const transform = require('./transform')
-const makeWrapper = require('./entryWrapper')
+const makeWrapper = require('./wrapper/entryWrapper')
 const { getWhiteListModules, setWhiteListModules, addWhiteListModule, removeWhiteListModule } = require('./common')
 
 const transpile = async (src, options = {}) => {
@@ -18,7 +17,8 @@ const transpile = async (src, options = {}) => {
     prettier = false,
     prettierOpts = {},
     buildOpts = {},
-    project // for studio support file, to keep deadline, TODO: remove if possible
+    project,
+    context// for studio support file, to keep deadline, TODO: remove if possible
   } = options
 
   // The decorated plugins should append this, but for now we add here to simplify
@@ -29,9 +29,16 @@ const transpile = async (src, options = {}) => {
   }
 
   src = babelify(src, [mainPlugin, flowPlugin, import2require])
-
   // browserify it
-  src = await transform(src, project, buildOpts)
+  if (isNode()) {
+    const transform = require('./transform/nodeTransform')
+    src = await transform(src, project, buildOpts)
+  }
+
+  if (!isNode() && project) {
+    const transform = require('./transform/browserTransform')
+    src = await transform(src, context, project, buildOpts)
+  }
 
   // preparation for minified
   src = prettify(src, { semi: true })
@@ -45,8 +52,6 @@ const transpile = async (src, options = {}) => {
       throw new Error(`Terser minify does not support some new node features, err=${err}`)
     }
   }
-
-  // console.log(src)
 
   return src
 }
@@ -96,3 +101,7 @@ function doMinify (src, opts = {}) {
 }
 
 module.exports = { transpile, simpleTranspile, addWhiteListModule, removeWhiteListModule, getWhiteListModules, setWhiteListModules }
+
+if (isNode()) {
+  module.exports.transform = require('./transform/nodeTransform')
+}

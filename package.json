@@ -36,8 +36,8 @@
     "mkdirp": "^1.0.4",
     "node-fetch": "^2.6.0",
     "prettier": "^1.19.1",
-    "tempy": "^1.0.0",
     "terser": "^4.8.0",
+    "tmp": "^0.2.1",
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {

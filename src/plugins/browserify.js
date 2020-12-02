@@ -17,7 +17,6 @@ module.exports = function ({ types: t }) {
 function processEntryFile (path) {
   const entryFunction = path.get('value.elements')[0]
   const entryBody = entryFunction.get('body')
-
   const wrap = template.smart(`
     function inner(require,module,exports) {
       BODY

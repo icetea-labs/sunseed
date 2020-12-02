@@ -3,8 +3,6 @@ const validate = require('validate-npm-package-name')
 module.exports.plugins = [
   'decorators-legacy',
   'classProperties',
-  'flow',
-  'flowComments',
   'asyncGenerators',
   'bigInt',
   'classPrivateMethods',

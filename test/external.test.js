@@ -1,4 +1,4 @@
-const external = require('../src/external')
+const external = require('../src/plugins/external')
 const babelify = require('../src/babelify')
 
 describe('external plugin', () => {
