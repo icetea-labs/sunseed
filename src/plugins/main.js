@@ -19,9 +19,7 @@ function isMethod (node) {
 }
 
 const SUPPORTED_TYPES = ['number', 'string', 'boolean', 'bigint', 'null', 'undefined',
-  'function', 'array', 'map', 'set', 'date', 'regexp', 'promise', 'address', 'list', 'autolist']
-
-const SUPPORTED_STATE_TYPES = ['autolist', 'list', 'object', 'number', 'string', 'bool', 'boolean', 'bigint']
+  'function', 'array', 'map', 'set', 'date', 'regexp', 'promise', 'address', 'list', 'autolist', 'object']
 
 function concatUnique (a, b) {
   if (!Array.isArray(a)) {
@@ -82,42 +80,6 @@ function getTypeName (node, insideUnion) {
   return result !== 'any' && Array.isArray(result) ? result : [result]
 }
 
-function getStateTypeName (node, insideUnion) {
-  if (!node) return 'any'
-  const ta = insideUnion ? node : node.typeAnnotation
-  const tn = ta.type
-  if (!tn) return 'any'
-  let result
-  if (tn === 'Identifier') {
-    result = ta.name
-  } else if (!tn.endsWith('TypeAnnotation')) {
-    result = tn
-  } else {
-    result = tn.slice(0, tn.length - 14)
-  }
-
-  result = result.toLowerCase()
-  // sanitize result
-
-  if (result === 'void') {
-    result = 'undefined'
-  } else if (result === 'nullliteral') {
-    result = 'null'
-  } else if (result === 'generic') {
-    const t = ta.id.name.toLowerCase()
-    result = SUPPORTED_STATE_TYPES.includes(t) ? t : 'any'
-  } else if (result === 'nullable') {
-    result = concatUnique(['undefined', 'null'], getTypeName(ta))
-  } else if (result === 'union') {
-    result = []
-    ta.types.forEach(ut => {
-      result = concatUnique(result, getTypeName(ut, true))
-    })
-  } else if (!SUPPORTED_STATE_TYPES.includes(result)) {
-    result = 'any'
-  }
-  return result !== 'any' && Array.isArray(result) ? result : [result]
-}
 
 function getTypeParams (params) {
   return params.map(p => {
@@ -230,7 +192,7 @@ class IceTea {
       if (FORBIDDEN_STATE_TYPES.includes(typeOfNode)) {
         throw this.buildError(`${typeOfNode} cannot be marked as @state.`, node)
       }
-      const typeName = getStateTypeName(node.typeAnnotation)
+      const typeName = getTypeName(node.typeAnnotation)
       const stateType = Array.isArray(typeName) ? typeName[0] : typeName
       if (stateType === 'any') {
         throw this.buildError('State type is required and must be one of AutoList, List, object, number, string, bool/boolean, bigint')
@@ -269,7 +231,7 @@ class IceTea {
         this.metadata[name] = {
           type: node.type,
           decorators: decoratorNames,
-          fieldType: getStateTypeName(node.typeAnnotation)
+          fieldType: getTypeName(node.typeAnnotation)
         }
       }
 

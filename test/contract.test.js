@@ -42,7 +42,7 @@ const __metadata = {
 test('state', () => {
   let srcDefine = `
     @contract class A {
-      @state property
+      @state property: string
     }
   `
   srcDefine = babelify(srcDefine, [plugin])
@@ -56,7 +56,7 @@ const __metadata = {
   property: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
-    fieldType: "any"
+    fieldType: ["string"]
   }
 };`)
 
@@ -129,7 +129,7 @@ const __metadata = {
 test('non constant state init', () => {
   let src = `
     @contract class A {
-      @state property = Math.PI
+      @state property: number = Math.PI
       xyz = this.property.value()
 
       constructor() {
@@ -156,7 +156,7 @@ const __metadata = {
   property: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
-    fieldType: "any"
+    fieldType: ["number"]
   },
   xyz: {
     type: "ClassProperty",

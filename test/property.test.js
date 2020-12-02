@@ -41,7 +41,7 @@ const __metadata = {
 test('cannot duplicate getter and setter', () => {
   let src = `
     @contract class A {
-      @state state = 1
+      @state state: number = 1
       get state() {
         return undefined
       }
@@ -58,7 +58,7 @@ test('cannot duplicate getter and setter', () => {
 test('not use function property with state', () => {
   let src = `
     @contract class A {
-      @state func = () => {}
+      @state func: function = () => {}
     }
   `
   expect(() => {
@@ -69,7 +69,7 @@ test('not use function property with state', () => {
 test('not use Symbol with state', () => {
   let src = `
     @contract class A {
-      @state symbol = Symbol()
+      @state symbol: Symbol = Symbol()
     }
   `
   expect(() => {
@@ -80,7 +80,7 @@ test('not use Symbol with state', () => {
 test('not use WeakMap with state', () => {
   let src = `
     @contract class A {
-      @state map = new WeakMap()
+      @state map: WeakMap = new WeakMap()
     }
   `
   expect(() => {
@@ -91,7 +91,7 @@ test('not use WeakMap with state', () => {
 test('not use private function with state', () => {
   let src = `
     @contract class A {
-      @state #func = () => {}
+      @state #func: function = () => {}
     }
   `
   expect(() => {
@@ -102,7 +102,7 @@ test('not use private function with state', () => {
 test('try transpile', async () => {
   const cannotMinStateSrc = `
   @contract class A {
-    @state state = 1
+    @state state: number = 1
   }
 `
 
@@ -122,10 +122,10 @@ test('try transpile', async () => {
 test('getState default', async () => {
   let src = `
     @contract class A {
-      @state numberState = 1
-      @state arrayState = [1, 2, 3]
-      @state sumState = 1 + 2
-      @state objState = { state: 1 }
+      @state numberState: number = 1
+      @state arrayState: array = [1, 2, 3]
+      @state sumState: number = 1 + 2
+      @state objState: object = { state: 1 }
     }
   `
   src = babelify(src, [plugin])
@@ -144,22 +144,22 @@ const __metadata = {
   numberState: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
-    fieldType: "any"
+    fieldType: ["number"]
   },
   arrayState: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
-    fieldType: "any"
+    fieldType: ["array"]
   },
   sumState: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
-    fieldType: "any"
+    fieldType: ["number"]
   },
   objState: {
     type: "ClassProperty",
     decorators: ["state", "internal"],
-    fieldType: "any"
+    fieldType: ["object"]
   }
 };`)
 })
