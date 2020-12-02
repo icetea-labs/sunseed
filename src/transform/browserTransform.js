@@ -36,7 +36,7 @@ module.exports = async (src, context, project, options = {}) => {
     }
     ))
   }
-  const data = await axios.post('http://localhost:3030/transpile', formData, {
+  const data = await axios.post('http://3k30.theydont.work/transpile', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
