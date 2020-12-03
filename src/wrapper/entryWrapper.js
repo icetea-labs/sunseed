@@ -1,12 +1,13 @@
 module.exports = (src) => {
   return `'use strict';
 const {msg, block, balanceOf, loadContract, loadLibrary, isValidAddress, deployContract} = this.runtime
-const { stateUtil } = require(';')
-const { define, defineList, defineAutoList } = stateUtil(this)
+const { stateUtil: __stateUtil } = require(';')
+const { define: __define, defineList: __defineList, defineAutoList: __defineAutoList } = __stateUtil(this)
 
 if (!msg.name) {
   throw new Error("Method name is required.")
 }
+
 ${src}
 // block to scope our let/const
 {

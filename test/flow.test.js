@@ -13,8 +13,8 @@ test('typed state', () => {
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class Typed {
-  state = define("state");
-  #state = define("#state");
+  state = __define("state");
+  #state = __define("#state");
 
   test(arg1: number = 1, arg2: string = null): void {}
 
@@ -61,7 +61,7 @@ test('address state', () => {
   src = babelify(src, [plugin])
   src = babelify(src, [flowPlugin])
   expect(src).toBe(`class AddressTest {
-  who = define("who");
+  who = __define("who");
 
   withdraw(who) {}
 

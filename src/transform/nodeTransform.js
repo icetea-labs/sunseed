@@ -17,7 +17,7 @@ const { getRequire } = require('./getRequire')
 const nodeTransform = async (src, project = null, options = {}) => {
   const { remote, basedir = '.' } = options
   const requires = getRequire(src)
-  const dir = tmp.dirSync()
+  const dir = tmp.dirSync({ unsafeCleanup: true })
   src = await transformUsingFs(src, dir, requires, remote, basedir)
   dir.removeCallback()
 
@@ -28,18 +28,22 @@ async function transformUsingFs (src, dir, requires, remote, basedir) {
   const ignores = getWhiteListModules()
   await Promise.all(Object.keys(requires).map(async value => {
     if (isHttp(value)) {
-      const data = (await axios.get(value)).data
-      const tmpdir = '.tmp-dir-' + Math.random().toFixed(20).slice(2)
-      const parsed = new url.URL(value)
-      const filename = path.basename(parsed.pathname)
-      mkdirp.sync(`${dir.name}/${tmpdir}`)
-      const filepath = `${dir.name}/${tmpdir}/${filename}`
-      if (typeof data === 'object') {
-        await fsp.writeFile(filepath, JSON.stringify(data))
-      } else {
-        await fsp.writeFile(filepath, data)
+      try {
+        const data = (await axios.get(value)).data
+        const tmpdir = '.tmp-dir-' + Math.random().toFixed(20).slice(2)
+        const parsed = new url.URL(value)
+        const filename = path.basename(parsed.pathname)
+        mkdirp.sync(`${dir.name}/${tmpdir}`)
+        const filepath = `${dir.name}/${tmpdir}/${filename}`
+        if (typeof data === 'object') {
+          await fsp.writeFile(filepath, JSON.stringify(data))
+        } else {
+          await fsp.writeFile(filepath, data)
+        }
+        requires[value] = filepath
+      } catch (err) {
+        throw new Error('Cannot load content of: ' + value)
       }
-      requires[value] = filepath
       return true
     }
     if (remote && remote[value]) {

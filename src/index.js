@@ -34,20 +34,20 @@ const transpile = async (src, options = {}) => {
     const transform = require('./transform/nodeTransform')
     src = await transform(src, project, buildOpts)
   }
-
+  //
   if (!isNode() && project) {
     const transform = require('./transform/browserTransform')
     src = await transform(src, context, project, buildOpts)
   }
-
   // preparation for minified
   src = prettify(src, { semi: true })
+  src = await doMinify(src, minifyOpts)
 
   if (prettier) {
     src = prettify(src, prettierOpts)
   } else if (minify) {
     try {
-      src = doMinify(src, minifyOpts)
+      src = await doMinify(src, minifyOpts)
     } catch (err) {
       throw new Error(`Terser minify does not support some new node features, err=${err}`)
     }
@@ -85,18 +85,23 @@ function prettify (src, opts = {}) {
   return prettier.format(src, { parser: 'babel', plugins })
 }
 
-function doMinify (src, opts = {}) {
-  const result = Terser.minify(src, {
+async function doMinify (src, opts = {}) {
+  const result = await Terser.minify(src, {
     parse: {
       bare_returns: true
     },
     keep_classnames: true,
     keep_fnames: true,
+    mangle: {
+      toplevel: true,
+      properties: {}
+    },
     ...opts
   })
   if (result.error) {
     throw new Error(JSON.stringify(result.error))
   }
+
   return result.code
 }
 

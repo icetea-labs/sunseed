@@ -130,10 +130,10 @@ test('getState default', async () => {
   `
   src = babelify(src, [plugin])
   expect(src).toEqual(`class A {
-  numberState = define("numberState", 1);
-  arrayState = define("arrayState", [1, 2, 3]);
-  sumState = define("sumState", 1 + 2);
-  objState = define("objState", {
+  numberState = __define("numberState", 1);
+  arrayState = __define("arrayState", [1, 2, 3]);
+  sumState = __define("sumState", 1 + 2);
+  objState = __define("objState", {
     state: 1
   });
 }

@@ -80,7 +80,6 @@ function getTypeName (node, insideUnion) {
   return result !== 'any' && Array.isArray(result) ? result : [result]
 }
 
-
 function getTypeParams (params) {
   return params.map(p => {
     const item = p.left || p
@@ -398,9 +397,9 @@ class IceTea {
     const { node } = path
     const name = node.key.name || ('#' + node.key.id.name)
     const fieldType = getTypeName(node.typeAnnotation)[0]
-    let defineType = 'define'
-    if (fieldType === 'list') defineType = 'defineList'
-    if (fieldType === 'autolist') defineType = 'defineAutoList'
+    let defineType = '__define'
+    if (fieldType === 'list') defineType = '__defineList'
+    if (fieldType === 'autolist') defineType = '__defineAutoList'
     const wrap = template.smart(`
       class noname {
         NAME = ${defineType}('NAME', DEFAULT)

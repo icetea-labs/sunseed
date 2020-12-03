@@ -3,14 +3,14 @@ const plugin = require('../src/plugins/main')
 const babelify = require('../src/babelify')
 const transform = require('../src/transform/nodeTransform')
 
-test('constructor to deploy', () => {
+test('constructor to deploy', async () => {
   let src = `
     @contract class A {
       constructor() {}
     }
   `
   src = babelify(src, [plugin])
-  src = Terser.minify(src).code
+  src = (await Terser.minify(src)).code
   expect(src).toBe('class A{__on_deployed(){}}const __contract=new A,__metadata={__on_deployed:{type:"ClassMethod",decorators:["view"],returnType:"any",params:[]}};')
 })
 
@@ -47,7 +47,7 @@ test('state', () => {
   `
   srcDefine = babelify(srcDefine, [plugin])
   expect(srcDefine).toBe(`class A {
-  property = define("property");
+  property = __define("property");
 }
 
 const __contract = new A();
@@ -68,7 +68,7 @@ const __metadata = {
   srcDefineList = babelify(srcDefineList, [plugin])
 
   expect(srcDefineList).toBe(`class A {
-  property = defineList("property");
+  property = __defineList("property");
 }
 
 const __contract = new A();
@@ -89,7 +89,7 @@ const __metadata = {
   srcDefineAutoList = babelify(srcDefineAutoList, [plugin])
 
   expect(srcDefineAutoList).toBe(`class A {
-  property = defineAutoList("property");
+  property = __defineAutoList("property");
 }
 
 const __contract = new A();
@@ -139,7 +139,7 @@ test('non constant state init', () => {
   `
   src = babelify(src, [plugin])
   expect(src).toBe(`class A {
-  property = define("property");
+  property = __define("property");
   xyz = msg.name === '__on_deployed' ? undefined : this.property.value();
 
   __on_deployed() {
@@ -178,7 +178,7 @@ test('json remote', async () => {
     @contract class A {}
   `
   src = babelify(src, [plugin])
-  src = Terser.minify(src).code
+  src = (await Terser.minify(src)).code
   expect(src).toBe('const test=require("https://gist.githubusercontent.com/thanhtung6824/230f995a9e89a6c9bdd4a760a5df1c0c/raw/0e839d1a989c48d82f791984022ec65bb31be7a5/test.json");class A{}const __contract=new A,__metadata={};')
 })
 //
@@ -188,7 +188,7 @@ test('js remote', async () => {
     @contract class A {}
   `
   src = babelify(src, [plugin])
-  src = Terser.minify(src).code
+  src = (await Terser.minify(src)).code
   expect(src).toBe('const test=require("https://gist.githubusercontent.com/thanhtung6824/b38e5ddcd66f34cd85d2afda33a22e12/raw/a5707d45b30b349f9d0772019abbfc9cc132d3fe/test.js");class A{}const __contract=new A,__metadata={};')
 })
 
@@ -201,7 +201,7 @@ test('whitelist require', async () => {
   `
   src = babelify(src, [plugin])
   src = await transform(src)
-  src = Terser.minify(src, { parse: { bare_returns: true } }).code
+  src = (await Terser.minify(src, { parse: { bare_returns: true } })).code
   expect(src).toBeDefined()
 })
 
@@ -214,7 +214,7 @@ test('whitelist special', async () => {
   `
   src = babelify(src, [plugin])
   src = await transform(src)
-  src = Terser.minify(src, { parse: { bare_returns: true } }).code
+  src = (await Terser.minify(src, { parse: { bare_returns: true } })).code
   expect(src).toBeDefined()
 })
 
@@ -227,7 +227,7 @@ test('prefer remote module', async () => {
   `
   src = babelify(src, [plugin])
   src = await transform(src, null, { remote: { ms: true } })
-  src = Terser.minify(src, { parse: { bare_returns: true } }).code
+  src = (await Terser.minify(src, { parse: { bare_returns: true } })).code
   expect(src).toBeDefined()
 })
 
@@ -251,7 +251,7 @@ test('inherit contract', async () => {
     console.log('A');
   }
 
-  state = define("state");
+  state = __define("state");
 }
 
 class B extends A {
